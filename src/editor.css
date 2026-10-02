@@ -1,0 +1,121 @@
+.editor {
+  height: 100dvh;
+  overflow: auto;
+  display: flex;
+  flex-wrap: wrap;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.editor-stage {
+  width: min(100%, 430px);
+  height: min(100dvh, 860px);
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  border-right: var(--outline-width) solid var(--grid);
+}
+
+.editor-panel {
+  flex: 1 1 320px;
+  max-width: 560px;
+  padding: 16px 20px 40px;
+  font-size: 14px;
+}
+
+.editor-panel h1 {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 8px 0 16px;
+}
+
+.editor-panel section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--grid);
+}
+
+.editor-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editor-panel .wide {
+  flex-basis: 100%;
+}
+
+.editor-panel .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.editor-panel input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.editor-panel input,
+.editor-panel select,
+.editor-panel textarea,
+.editor-panel button {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.editor-panel input[type='number'] {
+  width: 80px;
+}
+
+.editor-panel button {
+  cursor: pointer;
+}
+
+.editor-panel button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.editor-panel textarea {
+  width: 100%;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+}
+
+.editor-panel .letters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.editor-panel .letters span:not(.hint) {
+  border: 1px solid var(--grid);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.editor-panel .hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.editor-panel .warn {
+  color: var(--accent);
+}
+
+.editor-panel p {
+  margin: 0;
+  width: 100%;
+}

@@ -1,0 +1,148 @@
+/* Color tokens. Not final; tweak here. Dark mode has its own values. */
+:root {
+  --bg: #f3f1ec;
+  --fg: #151514;
+  --accent: #ff2b1c;
+  --grid: #c9c5bd;
+  --outline: #151514;
+  --muted: #8a867e;
+
+  --outline-width: 1.5px;
+  --ui-font: 'DM Sans', system-ui, sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131312;
+    --fg: #ebe7df;
+    --accent: #ff4b33;
+    --grid: #403e3a;
+    --outline: #ebe7df;
+    --muted: #8d8980;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #131312;
+  --fg: #ebe7df;
+  --accent: #ff4b33;
+  --grid: #403e3a;
+  --outline: #ebe7df;
+  --muted: #8d8980;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--ui-font);
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* SVG paint classes, so every color comes from the tokens above. */
+.fill-fg { fill: var(--fg); }
+.fill-bg { fill: var(--bg); }
+.fill-accent { fill: var(--accent); }
+.fill-grid { fill: var(--grid); }
+.fill-none { fill: none; }
+.stroke-outline { stroke: var(--outline); stroke-width: var(--outline-width); }
+
+/* Game screen */
+.screen {
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: 48px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px 0 6px;
+}
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.stage-host {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.stage {
+  display: block;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.fades {
+  transition: opacity var(--fade-ms, 180ms) ease;
+}
+
+.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage-caption {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  fill: var(--muted);
+  font-family: var(--ui-font);
+}
+
+.message {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 24px;
+}
+
+.pill {
+  border: var(--outline-width) solid var(--outline);
+  background: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+}

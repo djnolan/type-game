@@ -1,0 +1,9 @@
+node_modules
+dist
+.DS_Store
+*.local
+
+# Source font files never ship or get committed. Only the generated path data
+# in src/data/glyphs is tracked.
+fonts/*
+!fonts/README.md
