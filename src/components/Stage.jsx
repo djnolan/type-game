@@ -419,9 +419,10 @@ export default function Stage({
         </clipPath>
       </defs>
 
-      {/* Target */}
-      <circle cx={L.target.cx} cy={L.target.cy} r={L.target.r} className="fill-bg" />
-      <g clipPath={`url(#target-${uid})`}>{renderLetters(target, L.targetBox, 'fill-fg', false)}</g>
+      {/* Target: the negative. Letters are knocked out of a solid circle, so the
+          player's accent letters fill those spaces exactly when the canvas lands on it. */}
+      <circle cx={L.target.cx} cy={L.target.cy} r={L.target.r} className="fill-fg" />
+      <g clipPath={`url(#target-${uid})`}>{renderLetters(target, L.targetBox, 'fill-bg', false)}</g>
       <circle cx={L.target.cx} cy={L.target.cy} r={L.target.r} className="fill-none stroke-outline" />
 
       {caption && (
@@ -436,7 +437,7 @@ export default function Stage({
           cx={L.canvas.cx}
           cy={L.canvas.cy}
           r={L.canvas.r}
-          className={phase === 'pass' ? 'fill-fg' : building ? 'fill-bg' : 'fill-none'}
+          className={building ? 'fill-bg' : 'fill-none'}
           style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
         />
         <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>

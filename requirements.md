@@ -33,7 +33,7 @@ This first build is a **web prototype for iterating on core gameplay**. It may b
 Top to bottom:
 
 1. **Header.** Back button on the left. World progress indicator on the right.
-2. **Target circle.** The puzzle: letters cropped by the circle, merged into one solid shape.
+2. **Target circle.** The puzzle: letters cropped by the circle, merged into one solid shape. Shown in reverse (background-colored letters knocked out of a solid circle) so the player's letters fill the spaces when dragged up to check.
 3. **Canvas circle.** Same size as the target, with a dot grid in the background. The player builds their answer here.
 4. **Done button.** A small circular button with an accent-colored dot, beside the canvas.
 5. **Letter tray.** A full A–Z row of large letters, cropped at the bottom of the screen, with a tick-mark track under it.
