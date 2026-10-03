@@ -89,13 +89,13 @@ In play order. All are free from Google Fonts (SIL OFL).
 
 | World | Classification | Typeface    | Weight and axes                                    | Grid |
 | ----- | -------------- | ----------- | -------------------------------------------------- | ---- |
-| 1     | Oldstyle       | EB Garamond | Regular (400)                                      | 10   |
-| 2     | Modern/Didone  | Bodoni Moda | Regular (400), largest optical size (opsz 96)      | 12   |
+| 1     | Oldstyle       | EB Garamond | SemiBold (600)                                     | 10   |
+| 2     | Modern/Didone  | Bodoni Moda | SemiBold (600), largest optical size (opsz 96)     | 12   |
 | 3     | Slab           | Zilla Slab  | Bold (700)                                         | 16   |
-| 4     | Grotesque      | Archivo     | Black (900), widest width (wdth 125)               | 20   |
-| 5     | Geometric      | Jost        | Thin (100)                                         | 24   |
+| 4     | Grotesque      | Archivo     | Bold (700), expanded width (wdth 110)              | 20   |
+| 5     | Geometric      | Jost        | Light (300)                                        | 24   |
 
-- Weights are chosen for maximum contrast between worlds, not to make every world bold. Thin overlapping strokes (Jost, Bodoni's hairlines) make puzzles as hard as heavy cropped shapes (Archivo).
+- Weights are chosen for maximum contrast between worlds, not to make every world bold. Thin overlapping strokes (Jost Light, Bodoni's hairlines) make puzzles as hard as heavy cropped shapes (Archivo).
 - Each world's typeface, weight and axis values, and grid density live in one config (`src/data/worlds.json`). Swapping a font or weight means editing the config and rerunning the glyph script.
 - Variable fonts (Bodoni Moda, Archivo, Jost, and EB Garamond's source) are pinned to a static instance at these values before conversion.
 - Placed letters have a touch target wider than their outline, so thin letterforms are as easy to pick up as heavy ones.

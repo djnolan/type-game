@@ -6,7 +6,7 @@
     "typeface": {
       "family": "EB Garamond",
       "source": "fonts/eb-garamond/eb-garamond-latin-wght-normal.woff2",
-      "axes": { "wght": 400 }
+      "axes": { "wght": 600 }
     }
   },
   {
@@ -16,7 +16,7 @@
     "typeface": {
       "family": "Bodoni Moda",
       "source": "fonts/bodoni-moda/bodoni-moda-latin-standard-normal.woff2",
-      "axes": { "wght": 400, "opsz": 96 }
+      "axes": { "wght": 600, "opsz": 96 }
     }
   },
   {
@@ -36,7 +36,7 @@
     "typeface": {
       "family": "Archivo",
       "source": "fonts/archivo/archivo-latin-standard-normal.woff2",
-      "axes": { "wght": 900, "wdth": 125 }
+      "axes": { "wght": 700, "wdth": 110 }
     }
   },
   {
@@ -46,7 +46,7 @@
     "typeface": {
       "family": "Jost",
       "source": "fonts/jost/jost-latin-wght-normal.woff2",
-      "axes": { "wght": 100 }
+      "axes": { "wght": 300 }
     }
   }
 ]

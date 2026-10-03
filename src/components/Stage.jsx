@@ -18,7 +18,7 @@ const TICK_STEP = 30;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 
-// Placed letters get an invisible stroke, so thin letterforms (Jost Thin, Bodoni
+// Placed letters get an invisible stroke, so thin letterforms (Jost, Bodoni
 // hairlines) are as easy to pick up as heavy ones.
 const hitArea = {
   cursor: 'grab',

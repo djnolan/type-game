@@ -62,11 +62,11 @@ values (`wght`, plus `opsz`, `wdth` etc. for variable fonts).
 
 | World | Style     | Typeface    | Settings              | Grid |
 | ----- | --------- | ----------- | --------------------- | ---- |
-| 1     | Oldstyle  | EB Garamond | Regular (wght 400)    | 10   |
-| 2     | Modern    | Bodoni Moda | wght 400, opsz 96     | 12   |
+| 1     | Oldstyle  | EB Garamond | SemiBold (wght 600)   | 10   |
+| 2     | Modern    | Bodoni Moda | wght 600, opsz 96     | 12   |
 | 3     | Slab      | Zilla Slab  | Bold (wght 700)       | 16   |
-| 4     | Grotesque | Archivo     | wght 900, wdth 125    | 20   |
-| 5     | Geometric | Jost        | Thin (wght 100)       | 24   |
+| 4     | Grotesque | Archivo     | wght 700, wdth 110    | 20   |
+| 5     | Geometric | Jost        | Light (wght 300)      | 24   |
 
 Game letters are drawn from SVG path data, never from font files. Source fonts
 go in `fonts/` (gitignored). See `fonts/README.md` for where to get them. To
