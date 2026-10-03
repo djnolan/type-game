@@ -61,27 +61,24 @@ export function matchesSolution(letters, solution) {
   return solution.every((sol) => letters.some((l) => l.char === sol.char && l.x === sol.x && l.y === sol.y));
 }
 
-// How far the world's characters reach above and below the baseline, in
-// cap heights, so the tray can fit the tallest ascender and deepest descender.
+// How far the world's characters reach above the baseline, in cap heights,
+// so the tray can fit the tallest ascender.
 export function glyphExtent(glyphs) {
   let above = 1;
-  let below = 0;
   for (const [char, g] of Object.entries(glyphs.glyphs)) {
-    if (char === '*') continue;
-    above = Math.max(above, -g.bbox[1] / glyphs.capHeight);
-    below = Math.max(below, g.bbox[3] / glyphs.capHeight);
+    if (char !== '*') above = Math.max(above, -g.bbox[1] / glyphs.capHeight);
   }
-  return { above, below };
+  return { above };
 }
 
 // Screen layout for the gameplay stage, in CSS px. Tray values are in src/layout.js.
-export function computeLayout(W, H, shape = 'circle', extent = { above: 1.15, below: 0.45 }) {
+export function computeLayout(W, H, shape = 'circle', extent = { above: 1.15 }) {
   const t = trayConfig;
   const trackH = t.trackHeight;
   const trackBottom = H - t.bottomMargin;
   const trackTop = trackBottom - trackH;
   const trayCap = Math.min(t.capHeight, W * t.capHeightMaxWidthFraction);
-  const trayBaseline = trackTop - t.trackGap - extent.below * trayCap;
+  const trayBaseline = trackTop - t.baselineAboveTrack;
   const trayLetterTop = trayBaseline - extent.above * trayCap;
   const trayZoneTop = trayLetterTop - t.pickUpMargin;
 

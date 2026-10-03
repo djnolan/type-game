@@ -488,13 +488,6 @@ export default function Stage({
 
       {/* Tray */}
       <g className={`fades ${checking ? 'hidden' : ''}`}>
-        {slots.map((slot) => {
-          const x = slot.x0 - scroll;
-          if (inPlay(slot.char) || x > width || x + slot.w < 0) return null;
-          return (
-            <Glyph key={slot.char} glyph={glyphs.glyphs[slot.char]} ox={slot.ox - scroll} oy={L.tray.baseline} s={sT} className="fill-fg" />
-          );
-        })}
         <rect
           x={TRAY_PAD - scroll}
           y={L.tray.trackTop}
@@ -504,6 +497,14 @@ export default function Stage({
           className="fill-bg stroke-outline"
         />
         {ticks}
+        {/* Letters sit on the track's top edge, with descenders in front of it. */}
+        {slots.map((slot) => {
+          const x = slot.x0 - scroll;
+          if (inPlay(slot.char) || x > width || x + slot.w < 0) return null;
+          return (
+            <Glyph key={slot.char} glyph={glyphs.glyphs[slot.char]} ox={slot.ox - scroll} oy={L.tray.baseline} s={sT} className="fill-fg" />
+          );
+        })}
       </g>
 
       {/* The letter being dragged, unclipped and on top of everything. */}

@@ -1,20 +1,21 @@
 // Tray layout: the size and position of the letter tray, in CSS px. Tune here.
 //
 // The tray sits at the bottom of the screen, from top to bottom:
-//   pick-up zone margin → tallest ascender → baseline → deepest descender
-//   → gap → scroll track → bottom margin.
-// Ascender and descender depths come from the world's glyphs (all of A–Z,
-// a–z and 0–9), so every character is fully visible whichever set is shown.
+//   pick-up zone margin → tallest ascender → baseline on the top edge of the
+//   scroll track → scroll track → bottom margin.
+// Descenders hang down in front of the track. The ascender height comes from
+// the world's glyphs (all of A–Z, a–z and 0–9), so no character is cut off.
 export const tray = {
   // Cap height of tray letters: this many px, or this fraction of the screen
   // width on narrow screens, whichever is smaller.
-  capHeight: 40,
-  capHeightMaxWidthFraction: 0.11,
+  capHeight: 48,
+  capHeightMaxWidthFraction: 0.13,
   // Space between characters, and at both ends of the row.
   letterGap: 14,
   sidePadding: 20,
-  // Space between the deepest descender and the scroll track.
-  trackGap: 12,
+  // Baseline position relative to the top edge of the track: 0 sits the
+  // letters right on it, positive raises them.
+  baselineAboveTrack: 0,
   // Scroll track height, tick spacing, and space below it.
   trackHeight: 32,
   tickStep: 30,
