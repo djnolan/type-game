@@ -1,11 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import Game from './screens/Game';
 import { getLevel } from './lib/data';
+import { EDITOR_ENABLED } from './lib/dev';
 import { loadDraft } from './lib/draft';
 
-// The level editor is dev-only: present under `npm run dev`, or in a build made
-// with VITE_ENABLE_EDITOR=true. Otherwise it is left out of the bundle.
-export const EDITOR_ENABLED = import.meta.env.DEV || import.meta.env.VITE_ENABLE_EDITOR === 'true';
 const Editor = EDITOR_ENABLED ? lazy(() => import('./screens/Editor')) : null;
 
 function useHash() {

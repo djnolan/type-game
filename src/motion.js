@@ -31,4 +31,6 @@ export const gestures = {
   canvasSnapRadius: 0.2,
   // How far past the circle letters may be placed, as a fraction of the diameter.
   placementOverhang: 0.3,
+  // Width in px of the invisible stroke around placed letters that also picks them up.
+  letterHitWidth: 16,
 };

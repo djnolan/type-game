@@ -14,7 +14,8 @@ This first build is a **web prototype for iterating on core gameplay**. It may b
 
 **In scope**
 - Gameplay screen, fully playable
-- **One world with a few hand-authored levels**, using a placeholder typeface
+- **One world with a few hand-authored levels**
+- All five world typefaces converted to path data, so levels can be built in each (see World typefaces)
 - A data structure that already supports 5 worlds
 - Level editor (dev-only; see below)
 - World/level progress indicator
@@ -74,13 +75,31 @@ Since each letter is used once, the check compares each placed letter's grid pos
 ## Levels and worlds
 
 - **5 worlds**, roughly 5–10 levels each. Levels unlock in order.
-- Each world features one typeface. Classifications and fonts will be defined later.
+- Each world features one typeface from a different historical classification (see World typefaces below).
 - Grid density increases per world.
 - Difficulty comes mainly from:
   - letter scale increasing over time, which means more cropping
   - more complex overlapping and cropping
 - Puzzles must be strong, dynamic compositions, not random arrangements. They will be **hand-authored by the designer**.
 - Store levels as JSON. Each level holds its world, letter scale, and a list of letters with grid positions.
+
+### World typefaces
+
+In play order. All are free from Google Fonts (SIL OFL).
+
+| World | Classification | Typeface    | Weight and axes                                    | Grid |
+| ----- | -------------- | ----------- | -------------------------------------------------- | ---- |
+| 1     | Oldstyle       | EB Garamond | SemiBold (600)                                     | 10   |
+| 2     | Modern/Didone  | Bodoni Moda | SemiBold (600), largest optical size (opsz 96)     | 12   |
+| 3     | Slab           | Zilla Slab  | Bold (700)                                         | 16   |
+| 4     | Grotesque      | Archivo     | Bold (700), expanded width (wdth 110)              | 20   |
+| 5     | Geometric      | Jost        | Light (300)                                        | 24   |
+
+- Weights are chosen for maximum contrast between worlds, not to make every world bold. Thin overlapping strokes (Jost Light, Bodoni's hairlines) make puzzles as hard as heavy cropped shapes (Archivo).
+- Each world's typeface, weight and axis values, and grid density live in one config (`src/data/worlds.json`). Swapping a font or weight means editing the config and rerunning the glyph script.
+- Variable fonts (Bodoni Moda, Archivo, Jost, and EB Garamond's source) are pinned to a static instance at these values before conversion.
+- Placed letters have a touch target wider than their outline, so thin letterforms are as easy to pick up as heavy ones.
+- The level editor's world switcher moves a draft between worlds, so each typeface can be tried in the editor and, via Play test, the gameplay screen.
 
 ### Level editor (dev-only)
 - Reuses the gameplay canvas and tray. The grid matches the chosen world.
@@ -97,7 +116,7 @@ The game should never load font files for the game pieces. Only the UI font load
 - Convert each world's typeface to SVG path data ahead of time (e.g. a build script using opentype.js). Output one glyph data file per world containing A–Z, the asterisk, and the metrics needed for positioning. Include only the glyphs the game uses.
 - **Source font files never ship.** Keep them in a local folder that is gitignored and outside anything the build bundles or serves. Only the generated path data is committed and shipped.
 - The game renders letters from that path data only.
-- For the prototype, run one placeholder typeface through this same pipeline. That way, adding real world fonts later means dropping in a font and rerunning the script.
+- All five world typefaces go through this same pipeline. Variable fonts are first pinned to a static instance (fontTools' instancer), since opentype.js handles variable fonts poorly. Adding or swapping a font means dropping it in the local folder, editing the world config and rerunning the script.
 
 ## Rewards
 
@@ -130,7 +149,6 @@ For now:
 
 - What does the player see on a failed check — just a retry, or a hint about what's off?
 - End-of-level and end-of-world screens and transitions
-- World typefaces and historical classifications
 - Final color palette and accent
 - Motion language and references
 - Sound and haptics

@@ -54,19 +54,43 @@ order and are grouped by `world`.
 
 The editor exports this exact format. Save the file into `src/data/levels/`.
 
-## Letterforms
+## Worlds and letterforms
 
-Game letters are drawn from SVG path data, never from font files. Put source
-fonts in `fonts/` (gitignored) and register them in `scripts/typefaces.json`.
-Then run:
+Each world's settings live in one config, `src/data/worlds.json`: its name,
+grid density (cells across the diameter), typeface, source font file and axis
+values (`wght`, plus `opsz`, `wdth` etc. for variable fonts).
+
+| World | Style     | Typeface    | Settings              | Grid |
+| ----- | --------- | ----------- | --------------------- | ---- |
+| 1     | Oldstyle  | EB Garamond | SemiBold (wght 600)   | 10   |
+| 2     | Modern    | Bodoni Moda | wght 600, opsz 96     | 12   |
+| 3     | Slab      | Zilla Slab  | Bold (wght 700)       | 16   |
+| 4     | Grotesque | Archivo     | wght 700, wdth 110    | 20   |
+| 5     | Geometric | Jost        | Light (wght 300)      | 24   |
+
+Game letters are drawn from SVG path data, never from font files. Source fonts
+go in `fonts/` (gitignored). See `fonts/README.md` for where to get them. To
+swap a font or weight, edit `worlds.json` and run:
 
 ```sh
-npm run glyphs
+npm run glyphs        # every world
+npm run glyphs -- 4   # one world
 ```
 
-This writes `src/data/glyphs/<id>.json`. A world uses a typeface through its
-`typeface` field in `src/data/worlds.json`. See `fonts/README.md` for the
-placeholder font (Alfa Slab One, OFL).
+This needs Python 3 with fontTools (`pip install fonttools brotli`). Variable
+fonts are pinned at the configured axis values with fontTools' instancer, then
+opentype.js converts the static instance to `src/data/glyphs/world-<n>.json`
+(A–Z, `*` and metrics). Only those files are committed and shipped.
+
+`grid` is read by the app directly, so changing it needs no rebuild. Levels
+already authored for that world keep their grid coordinates, so recheck them.
+
+### Trying each world
+
+The level editor's World buttons switch the draft between worlds, moving its
+letters to the matching points on the new grid. Positions always come from your
+last hand-placed layout, so flipping through worlds and back returns the
+original positions. Use Play test to try the draft in the gameplay screen.
 
 ## Where things live
 

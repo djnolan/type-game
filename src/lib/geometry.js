@@ -84,3 +84,11 @@ export function computeLayout(W, H) {
     dropBottom: Math.min(canvas.cy + D / 2 + D * 0.3, trayZoneTop - 4),
   };
 }
+
+// Moves letters to the matching points on another grid density, so a
+// composition keeps its layout when it's previewed or moved to another world.
+export function regrid(letters, fromGrid, toGrid) {
+  if (fromGrid === toGrid) return letters;
+  const k = toGrid / fromGrid;
+  return letters.map((l) => ({ ...l, x: Math.round(l.x * k), y: Math.round(l.y * k) }));
+}

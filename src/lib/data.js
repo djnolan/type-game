@@ -3,16 +3,21 @@ import worldList from '../data/worlds.json';
 const glyphModules = import.meta.glob('../data/glyphs/*.json', { eager: true, import: 'default' });
 const levelModules = import.meta.glob('../data/levels/*.json', { eager: true, import: 'default' });
 
-export const typefaces = Object.fromEntries(Object.values(glyphModules).map((t) => [t.id, t]));
+// Glyph data is generated per world by `npm run glyphs` (scripts/build-glyphs.mjs).
+const typefaces = Object.fromEntries(Object.values(glyphModules).map((t) => [t.id, t]));
 
-export const worlds = worldList.map((w) => ({
-  ...w,
-  glyphs: typefaces[w.typeface],
-  levels: Object.keys(levelModules)
-    .sort()
-    .map((p) => levelModules[p])
-    .filter((l) => l.world === w.world),
-}));
+export const worlds = worldList.map((w) => {
+  const glyphs = typefaces[`world-${w.world}`];
+  if (!glyphs) throw new Error(`No glyph data for world ${w.world}. Run npm run glyphs.`);
+  return {
+    ...w,
+    glyphs,
+    levels: Object.keys(levelModules)
+      .sort()
+      .map((p) => levelModules[p])
+      .filter((l) => l.world === w.world),
+  };
+});
 
 // All levels in play order.
 export const levels = worlds.flatMap((w) => w.levels);
