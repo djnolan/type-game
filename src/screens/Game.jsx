@@ -2,6 +2,8 @@ import { useState } from 'react';
 import Header from '../components/Header';
 import Stage from '../components/Stage';
 import { getLevel, getWorld, levels } from '../lib/data';
+import { EDITOR_ENABLED } from '../lib/dev';
+import { getShape } from '../lib/shape';
 import { currentLevel, useProgress, worldStates } from '../lib/progress';
 import { useSize } from '../lib/useSize';
 
@@ -47,6 +49,7 @@ export default function Game({ testLevel, onBack }) {
               onLettersChange={setLetters}
               target={level.letters}
               solution={level.letters}
+              shape={EDITOR_ENABLED ? getShape() : 'circle'}
               onPass={() => !testLevel && complete(level.id)}
               onContinue={next}
             />

@@ -25,21 +25,30 @@ export function snapToGrid(glyph, ox, oy, box, grid, s) {
   };
 }
 
-// True if any part of the glyph's bounding box falls inside the circle.
-export function glyphTouchesCircle(glyph, ox, oy, s, circle) {
+// True if any part of the glyph's bounding box falls inside the circle, or
+// inside its bounding square when the board shape is 'square' (temporary test).
+export function glyphTouchesCircle(glyph, ox, oy, s, circle, shape = 'circle') {
   const [x1, y1, x2, y2] = glyph.bbox;
   const nx = Math.max(ox + x1 * s, Math.min(circle.cx, ox + x2 * s));
   const ny = Math.max(oy + y1 * s, Math.min(circle.cy, oy + y2 * s));
+  if (shape === 'square') return Math.abs(nx - circle.cx) < circle.r && Math.abs(ny - circle.cy) < circle.r;
   return Math.hypot(nx - circle.cx, ny - circle.cy) < circle.r;
 }
 
+// True if point (x, y) is inside the board shape.
+export function insideShape(x, y, circle, shape = 'circle', inset = 0) {
+  const r = circle.r - inset;
+  if (shape === 'square') return Math.abs(x - circle.cx) < r && Math.abs(y - circle.cy) < r;
+  return Math.hypot(x - circle.cx, y - circle.cy) < r;
+}
+
 // Same check in abstract puzzle space, for validating level data.
-export function letterVisible(glyphs, letter, scale, grid) {
+export function letterVisible(glyphs, letter, scale, grid, shape = 'circle') {
   const D = 1000;
   const glyph = glyphs.glyphs[letter.char];
   const s = puzzleScale(glyphs, scale, D);
   const { ox, oy } = letterOrigin(glyph, letter.x, letter.y, { x0: 0, y0: 0, D }, grid, s);
-  return glyphTouchesCircle(glyph, ox, oy, s, { cx: D / 2, cy: D / 2, r: D / 2 });
+  return glyphTouchesCircle(glyph, ox, oy, s, { cx: D / 2, cy: D / 2, r: D / 2 }, shape);
 }
 
 // A check passes only when every letter sits exactly on its solution grid point.
@@ -49,7 +58,7 @@ export function matchesSolution(letters, solution) {
 }
 
 // Screen layout for the gameplay stage, in CSS px.
-export function computeLayout(W, H) {
+export function computeLayout(W, H, shape = 'circle') {
   const trackH = 32;
   const trackBottom = H - 14;
   const trackTop = trackBottom - trackH;
@@ -68,7 +77,12 @@ export function computeLayout(W, H) {
   const cx = W / 2;
   const target = { cx, cy: top + D / 2, r: D / 2 };
   const canvas = { cx, cy: top + D + gap + D / 2, r: D / 2 };
-  const done = { cx: Math.min(W - 24, cx + D / 2 + 34), cy: canvas.cy - D / 2 - 4, r: 15 };
+  // A square board fills its top-right corner, so Done drops to beside the
+  // canvas's vertical middle when the board shape is 'square' (temporary test).
+  const done =
+    shape === 'square'
+      ? { cx: Math.min(W - 20, cx + D / 2 + 30), cy: canvas.cy, r: 15 }
+      : { cx: Math.min(W - 24, cx + D / 2 + 34), cy: canvas.cy - D / 2 - 4, r: 15 };
 
   return {
     W,

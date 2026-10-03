@@ -4,6 +4,7 @@ import {
   ALPHABET,
   computeLayout,
   glyphTouchesCircle,
+  insideShape,
   letterOrigin,
   matchesSolution,
   puzzleScale,
@@ -28,6 +29,12 @@ const hitArea = {
   vectorEffect: 'non-scaling-stroke',
 };
 
+// A circle, or its bounding square when the board shape is 'square' (temporary test).
+function Board({ c, shape, ...rest }) {
+  if (shape === 'square') return <rect x={c.cx - c.r} y={c.cy - c.r} width={2 * c.r} height={2 * c.r} {...rest} />;
+  return <circle cx={c.cx} cy={c.cy} r={c.r} {...rest} />;
+}
+
 function Glyph({ glyph, ox, oy, s, ...rest }) {
   return <path d={glyph.d} transform={`translate(${ox} ${oy}) scale(${s})`} {...rest} />;
 }
@@ -48,12 +55,13 @@ export default function Stage({
   target,
   solution,
   checkable = true,
+  shape = 'circle',
   onPass,
   onContinue,
 }) {
   const uid = useId().replace(/:/g, '');
   const svgRef = useRef(null);
-  const L = useMemo(() => computeLayout(width, height), [width, height]);
+  const L = useMemo(() => computeLayout(width, height, shape), [width, height, shape]);
   const sP = puzzleScale(glyphs, scale, L.D);
   const sT = L.tray.cap / glyphs.capHeight;
 
@@ -173,7 +181,7 @@ export default function Stage({
       const oy = p.y - gesture.current.gv * sP;
       const pos = snapToGrid(glyph, ox, oy, L.canvasBox, grid, sP);
       const to = letterOrigin(glyph, pos.x, pos.y, L.canvasBox, grid, sP);
-      if (glyphTouchesCircle(glyph, to.ox, to.oy, sP, L.canvas)) {
+      if (glyphTouchesCircle(glyph, to.ox, to.oy, sP, L.canvas, shape)) {
         flyGhost({ ...to, s: sP }, motion.letterSnap, () =>
           onLettersChange([...lettersRef.current.filter((l) => l.char !== char), { char, ...pos }]),
         );
@@ -262,7 +270,7 @@ export default function Stage({
     }
     if (phase === 'check') {
       const c = { x: L.canvas.cx + offset.x, y: L.canvas.cy + offset.y };
-      if (Math.hypot(p.x - c.x, p.y - c.y) > L.canvas.r) return;
+      if (!insideShape(p.x, p.y, { ...L.canvas, cx: c.x, cy: c.y }, shape)) return;
       canvasAnim.current?.stop();
       gesture.current = { id: e.pointerId, type: 'canvas', start: p, startOffset: offset };
     } else if (phase === 'build') {
@@ -361,7 +369,7 @@ export default function Stage({
     for (let j = 0; j <= grid; j++) {
       const x = L.canvasBox.x0 + i * cell;
       const y = L.canvasBox.y0 + j * cell;
-      if (Math.hypot(x - L.canvas.cx, y - L.canvas.cy) < L.canvas.r - 3) {
+      if (insideShape(x, y, L.canvas, shape, 3)) {
         dots.push(<circle key={`${i}-${j}`} cx={x} cy={y} r={1.2} className="fill-grid" />);
       }
     }
@@ -422,18 +430,18 @@ export default function Stage({
     >
       <defs>
         <clipPath id={`target-${uid}`}>
-          <circle cx={L.target.cx} cy={L.target.cy} r={L.target.r} />
+          <Board c={L.target} shape={shape} />
         </clipPath>
         <clipPath id={`canvas-${uid}`}>
-          <circle cx={L.canvas.cx} cy={L.canvas.cy} r={L.canvas.r} />
+          <Board c={L.canvas} shape={shape} />
         </clipPath>
       </defs>
 
       {/* Target: the negative. Letters are knocked out of a solid circle, so the
           player's accent letters fill those spaces exactly when the canvas lands on it. */}
-      <circle cx={L.target.cx} cy={L.target.cy} r={L.target.r} className="fill-fg" />
+      <Board c={L.target} shape={shape} className="fill-fg" />
       <g clipPath={`url(#target-${uid})`}>{renderLetters(target, L.targetBox, 'fill-bg', false)}</g>
-      <circle cx={L.target.cx} cy={L.target.cy} r={L.target.r} className="fill-none stroke-outline" />
+      <Board c={L.target} shape={shape} className="fill-none stroke-outline" />
 
       {caption && (
         <text x={L.canvas.cx} y={L.canvas.cy} textAnchor="middle" className="stage-caption">
@@ -443,16 +451,15 @@ export default function Stage({
 
       {/* Canvas */}
       <g transform={`translate(${offset.x} ${offset.y})`}>
-        <circle
-          cx={L.canvas.cx}
-          cy={L.canvas.cy}
-          r={L.canvas.r}
+        <Board
+          c={L.canvas}
+          shape={shape}
           className={building ? 'fill-bg' : 'fill-none'}
           style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
         />
         <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
         <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
-        <circle cx={L.canvas.cx} cy={L.canvas.cy} r={L.canvas.r} className="fill-none stroke-outline" />
+        <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
       </g>
 
       {/* Done */}

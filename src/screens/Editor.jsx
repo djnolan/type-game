@@ -6,6 +6,7 @@ import { getLevel, getWorld, levels, validateLevel, worlds } from '../lib/data';
 import { emptyDraft, loadDraft, saveDraft } from '../lib/draft';
 import { letterVisible, regrid } from '../lib/geometry';
 import { useSize } from '../lib/useSize';
+import { getShape, setShape } from '../lib/shape';
 import { getTheme, setTheme } from '../lib/theme';
 import '../editor.css';
 
@@ -29,6 +30,7 @@ export default function Editor() {
   const [json, setJson] = useState(() => formatLevel(level));
   const [jsonError, setJsonError] = useState(null);
   const [theme, setThemeState] = useState(getTheme);
+  const [shape, setShapeState] = useState(getShape);
   const [notice, setNotice] = useState(null);
   const [hostRef, size] = useSize();
   const fileRef = useRef(null);
@@ -112,7 +114,7 @@ export default function Editor() {
     setTimeout(() => setNotice(null), 1500);
   }
 
-  const hidden = level.letters.filter((l) => !letterVisible(world.glyphs, l, level.scale, world.grid));
+  const hidden = level.letters.filter((l) => !letterVisible(world.glyphs, l, level.scale, world.grid, shape));
   const errors = validateLevel(level);
   const clash = getLevel(level.id);
 
@@ -132,6 +134,7 @@ export default function Editor() {
               onLettersChange={setLetters}
               target={level.letters}
               checkable={false}
+              shape={shape}
             />
           )}
         </div>
@@ -206,7 +209,7 @@ export default function Editor() {
             )}
           </div>
           {hidden.length > 0 && (
-            <p className="warn">Fully outside the circle, so players can’t see: {hidden.map((l) => l.char).join(', ')}</p>
+            <p className="warn">Fully outside the {shape}, so players can’t see: {hidden.map((l) => l.char).join(', ')}</p>
           )}
           {errors.length > 0 && <p className="warn">{errors.join('; ')}</p>}
           {clash && <p className="hint">Same ID as an existing level. Exporting will replace {clash.id}.json.</p>}
@@ -245,6 +248,19 @@ export default function Editor() {
               <option value="system">System</option>
               <option value="light">Light</option>
               <option value="dark">Dark</option>
+            </select>
+          </label>
+          <label>
+            Board shape <span className="hint">temporary test</span>
+            <select
+              value={shape}
+              onChange={(e) => {
+                setShape(e.target.value);
+                setShapeState(e.target.value);
+              }}
+            >
+              <option value="circle">Circle</option>
+              <option value="square">Square</option>
             </select>
           </label>
         </section>
