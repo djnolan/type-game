@@ -21,7 +21,7 @@ npm run build      # production build in dist/ (no level editor)
 | `#/play/<level id>`   | Play any one level without saving progress (dev only).               |
 | `#/play/draft`        | Play the editor's current draft (dev only).                          |
 
-The dev-only routes exist under `npm run dev`. For a build that includes them,
+The dev-only routes and the world switcher exist under `npm run dev`. For a build that includes them,
 use `VITE_ENABLE_EDITOR=true npm run build`.
 
 To reset progress, clear the site's local storage or finish every level and
@@ -54,19 +54,49 @@ order and are grouped by `world`.
 
 The editor exports this exact format. Save the file into `src/data/levels/`.
 
-## Letterforms
+## Worlds and letterforms
 
-Game letters are drawn from SVG path data, never from font files. Put source
-fonts in `fonts/` (gitignored) and register them in `scripts/typefaces.json`.
-Then run:
+Each world's settings live in one config, `src/data/worlds.json`: its name,
+grid density (cells across the diameter), typeface, source font file and axis
+values (`wght`, plus `opsz`, `wdth` etc. for variable fonts).
+
+| World | Style     | Typeface    | Settings              | Grid |
+| ----- | --------- | ----------- | --------------------- | ---- |
+| 1     | Oldstyle  | EB Garamond | Regular (wght 400)    | 10   |
+| 2     | Modern    | Bodoni Moda | wght 400, opsz 96     | 12   |
+| 3     | Slab      | Zilla Slab  | Bold (wght 700)       | 16   |
+| 4     | Grotesque | Archivo     | wght 900, wdth 125    | 20   |
+| 5     | Geometric | Jost        | Thin (wght 100)       | 24   |
+
+Game letters are drawn from SVG path data, never from font files. Source fonts
+go in `fonts/` (gitignored). See `fonts/README.md` for where to get them. To
+swap a font or weight, edit `worlds.json` and run:
 
 ```sh
-npm run glyphs
+npm run glyphs        # every world
+npm run glyphs -- 4   # one world
 ```
 
-This writes `src/data/glyphs/<id>.json`. A world uses a typeface through its
-`typeface` field in `src/data/worlds.json`. See `fonts/README.md` for the
-placeholder font (Alfa Slab One, OFL).
+This needs Python 3 with fontTools (`pip install fonttools brotli`). Variable
+fonts are pinned at the configured axis values with fontTools' instancer, then
+opentype.js converts the static instance to `src/data/glyphs/world-<n>.json`
+(A–Z, `*` and metrics). Only those files are committed and shipped.
+
+`grid` is read by the app directly, so changing it needs no rebuild. Levels
+already authored for that world keep their grid coordinates, so recheck them.
+
+### Dev world switcher
+
+In dev builds a row of world buttons sits above the game and in the level
+editor.
+
+- **Game:** plays the current level in another world's typeface and grid, with
+  letter positions moved to the matching points on the new grid. Choose the
+  level's own world to turn the preview off. The choice lasts for the browser
+  tab.
+- **Editor:** sets the draft's world and moves its letters to the new grid.
+  Positions always come from your last hand-placed layout, so flipping through
+  worlds and back returns the original positions.
 
 ## Where things live
 

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Header from '../components/Header';
 import Stage from '../components/Stage';
+import WorldSwitcher from '../components/WorldSwitcher';
 import { getLevel, getWorld, levels, validateLevel, worlds } from '../lib/data';
 import { emptyDraft, loadDraft, saveDraft } from '../lib/draft';
-import { letterVisible } from '../lib/geometry';
+import { letterVisible, regrid } from '../lib/geometry';
 import { useSize } from '../lib/useSize';
 import { getTheme, setTheme } from '../lib/theme';
 import '../editor.css';
@@ -42,12 +43,29 @@ export default function Editor() {
 
   const update = (patch) => setLevel((l) => ({ ...l, ...patch }));
 
+  // Switching world keeps the composition: letters move to the matching points
+  // on the new grid. Positions always come from the last hand-placed layout, so
+  // flipping through worlds doesn't pile up rounding.
+  const placed = useRef(null);
+  const setLetters = (letters) => {
+    placed.current = null;
+    update({ letters });
+  };
+
+  function switchWorld(n) {
+    const next = getWorld(n);
+    if (!next || n === level.world) return;
+    placed.current ??= { letters: level.letters, grid: world.grid };
+    update({ world: n, letters: regrid(placed.current.letters, placed.current.grid, next.grid) });
+  }
+
   function load(next) {
     const errors = validateLevel(next);
     if (errors.length) {
       setJsonError(errors.join('; '));
       return false;
     }
+    placed.current = null;
     setLevel({ id: next.id, world: next.world, scale: next.scale, letters: next.letters.map(({ char, x, y }) => ({ char, x, y })) });
     return true;
   }
@@ -111,7 +129,7 @@ export default function Editor() {
               grid={world.grid}
               scale={level.scale}
               letters={level.letters}
-              onLettersChange={(letters) => update({ letters })}
+              onLettersChange={setLetters}
               target={level.letters}
               checkable={false}
             />
@@ -134,7 +152,14 @@ export default function Editor() {
               ))}
             </select>
           </label>
-          <button onClick={() => setLevel({ ...emptyDraft(), world: level.world })}>New</button>
+          <button
+            onClick={() => {
+              placed.current = null;
+              setLevel({ ...emptyDraft(), world: level.world });
+            }}
+          >
+            New
+          </button>
         </section>
 
         <section className="fields">
@@ -142,16 +167,10 @@ export default function Editor() {
             ID
             <input value={level.id} onChange={(e) => update({ id: e.target.value.trim() })} />
           </label>
-          <label>
+          <div className="wide">
             World
-            <select value={level.world} onChange={(e) => update({ world: Number(e.target.value) })}>
-              {worlds.map((w) => (
-                <option key={w.world} value={w.world}>
-                  {w.world} · grid {w.grid}
-                </option>
-              ))}
-            </select>
-          </label>
+            <WorldSwitcher value={world.world} onChange={switchWorld} />
+          </div>
           <label className="wide">
             Letter scale <span className="hint">cap height ÷ circle diameter</span>
             <div className="row">
@@ -191,7 +210,7 @@ export default function Editor() {
           )}
           {errors.length > 0 && <p className="warn">{errors.join('; ')}</p>}
           {clash && <p className="hint">Same ID as an existing level. Exporting will replace {clash.id}.json.</p>}
-          <button onClick={() => update({ letters: [] })}>Clear canvas</button>
+          <button onClick={() => setLetters([])}>Clear canvas</button>
         </section>
 
         <section>

@@ -1,7 +1,52 @@
 [
-  { "world": 1, "name": "World 1", "typeface": "placeholder", "grid": 10 },
-  { "world": 2, "name": "World 2", "typeface": "placeholder", "grid": 12 },
-  { "world": 3, "name": "World 3", "typeface": "placeholder", "grid": 16 },
-  { "world": 4, "name": "World 4", "typeface": "placeholder", "grid": 20 },
-  { "world": 5, "name": "World 5", "typeface": "placeholder", "grid": 24 }
+  {
+    "world": 1,
+    "name": "Oldstyle",
+    "grid": 10,
+    "typeface": {
+      "family": "EB Garamond",
+      "source": "fonts/eb-garamond/eb-garamond-latin-wght-normal.woff2",
+      "axes": { "wght": 400 }
+    }
+  },
+  {
+    "world": 2,
+    "name": "Modern",
+    "grid": 12,
+    "typeface": {
+      "family": "Bodoni Moda",
+      "source": "fonts/bodoni-moda/bodoni-moda-latin-standard-normal.woff2",
+      "axes": { "wght": 400, "opsz": 96 }
+    }
+  },
+  {
+    "world": 3,
+    "name": "Slab",
+    "grid": 16,
+    "typeface": {
+      "family": "Zilla Slab",
+      "source": "fonts/zilla-slab/zilla-slab-latin-700-normal.woff2",
+      "axes": { "wght": 700 }
+    }
+  },
+  {
+    "world": 4,
+    "name": "Grotesque",
+    "grid": 20,
+    "typeface": {
+      "family": "Archivo",
+      "source": "fonts/archivo/archivo-latin-standard-normal.woff2",
+      "axes": { "wght": 900, "wdth": 125 }
+    }
+  },
+  {
+    "world": 5,
+    "name": "Geometric",
+    "grid": 24,
+    "typeface": {
+      "family": "Jost",
+      "source": "fonts/jost/jost-latin-wght-normal.woff2",
+      "axes": { "wght": 100 }
+    }
+  }
 ]

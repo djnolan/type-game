@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import Header from '../components/Header';
 import Stage from '../components/Stage';
+import WorldSwitcher from '../components/WorldSwitcher';
 import { getLevel, getWorld, levels } from '../lib/data';
+import { EDITOR_ENABLED } from '../lib/dev';
+import { useDevWorld } from '../lib/devWorld';
+import { regrid } from '../lib/geometry';
 import { currentLevel, useProgress, worldStates } from '../lib/progress';
 import { useSize } from '../lib/useSize';
 
@@ -13,10 +17,18 @@ export default function Game({ testLevel, onBack }) {
   const [playingId, setPlayingId] = useState(() => currentLevel(completed)?.id ?? null);
   const [round, setRound] = useState(0);
   const [letters, setLetters] = useState([]);
+  const [previewWorld, setPreviewWorld] = useDevWorld();
 
   const level = testLevel ?? (playingId ? getLevel(playingId) : null);
-  const world = level && getWorld(level.world);
   const activeWorld = level?.world ?? levels.at(-1)?.world;
+  // Dev preview: play the level in another world's typeface, regridded to its density.
+  const world = level && getWorld(EDITOR_ENABLED ? (previewWorld ?? level.world) : level.world);
+  const puzzle = level && regrid(level.letters, getWorld(level.world).grid, world.grid);
+
+  function preview(n) {
+    setLetters([]);
+    setPreviewWorld(level && n === level.world ? null : n);
+  }
 
   function next() {
     setLetters([]);
@@ -32,12 +44,19 @@ export default function Game({ testLevel, onBack }) {
 
   return (
     <div className="screen">
+      {EDITOR_ENABLED && (
+        <WorldSwitcher
+          value={world?.world ?? previewWorld ?? activeWorld}
+          onChange={preview}
+          note={level && world.world !== level.world ? `previewing ${level.id}` : null}
+        />
+      )}
       <Header onBack={onBack} worlds={worldStates(completed, activeWorld)} />
       {level ? (
         <div className="stage-host" ref={hostRef}>
           {size && (
             <Stage
-              key={`${level.id}/${round}`}
+              key={`${level.id}/${world.world}/${round}`}
               width={size.width}
               height={size.height}
               glyphs={world.glyphs}
@@ -45,8 +64,8 @@ export default function Game({ testLevel, onBack }) {
               scale={level.scale}
               letters={letters}
               onLettersChange={setLetters}
-              target={level.letters}
-              solution={level.letters}
+              target={puzzle}
+              solution={puzzle}
               onPass={() => !testLevel && complete(level.id)}
               onContinue={next}
             />

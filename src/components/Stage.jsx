@@ -18,6 +18,16 @@ const TICK_STEP = 30;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 
+// Placed letters get an invisible stroke, so thin letterforms (Jost Thin, Bodoni
+// hairlines) are as easy to pick up as heavy ones.
+const hitArea = {
+  cursor: 'grab',
+  stroke: 'transparent',
+  strokeWidth: gestures.letterHitWidth,
+  strokeLinejoin: 'round',
+  vectorEffect: 'non-scaling-stroke',
+};
+
 function Glyph({ glyph, ox, oy, s, ...rest }) {
   return <path d={glyph.d} transform={`translate(${ox} ${oy}) scale(${s})`} {...rest} />;
 }
@@ -370,7 +380,7 @@ export default function Stage({
           s={sP}
           className={className}
           data-char={interactive ? l.char : undefined}
-          style={interactive ? { cursor: 'grab' } : undefined}
+          style={interactive ? hitArea : undefined}
         />
       );
     });

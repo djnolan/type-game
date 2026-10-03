@@ -119,3 +119,8 @@
   margin: 0;
   width: 100%;
 }
+
+.editor-panel .world-switcher {
+  padding: 4px 0 0;
+  font-size: 12px;
+}
