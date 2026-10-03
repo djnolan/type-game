@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Header from '../components/Header';
 import Stage from '../components/Stage';
+import { charsFor } from '../lib/charsets';
 import { getLevel, getWorld, levels } from '../lib/data';
 import { EDITOR_ENABLED } from '../lib/dev';
 import { getShape } from '../lib/shape';
@@ -45,6 +46,7 @@ export default function Game({ testLevel, onBack }) {
               glyphs={world.glyphs}
               grid={world.grid}
               scale={level.scale}
+              chars={charsFor(level)}
               letters={letters}
               onLettersChange={setLetters}
               target={level.letters}

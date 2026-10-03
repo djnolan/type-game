@@ -1,8 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { animate } from '../lib/animate';
 import {
-  ALPHABET,
   computeLayout,
+  glyphExtent,
   glyphTouchesCircle,
   insideShape,
   letterOrigin,
@@ -10,11 +10,12 @@ import {
   puzzleScale,
   snapToGrid,
 } from '../lib/geometry';
+import { tray as trayConfig } from '../layout';
 import { gestures, motion } from '../motion';
 
-const TRAY_PAD = 20;
-const TRAY_GAP = 10;
-const TICK_STEP = 30;
+const TRAY_PAD = trayConfig.sidePadding;
+const TRAY_GAP = trayConfig.letterGap;
+const TICK_STEP = trayConfig.tickStep;
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -50,6 +51,7 @@ export default function Stage({
   glyphs,
   grid,
   scale,
+  chars,
   letters,
   onLettersChange,
   target,
@@ -61,7 +63,8 @@ export default function Stage({
 }) {
   const uid = useId().replace(/:/g, '');
   const svgRef = useRef(null);
-  const L = useMemo(() => computeLayout(width, height, shape), [width, height, shape]);
+  const extent = useMemo(() => glyphExtent(glyphs), [glyphs]);
+  const L = useMemo(() => computeLayout(width, height, shape, extent), [width, height, shape, extent]);
   const sP = puzzleScale(glyphs, scale, L.D);
   const sT = L.tray.cap / glyphs.capHeight;
 
@@ -90,16 +93,18 @@ export default function Stage({
   const lettersRef = useRef(letters);
   lettersRef.current = letters;
 
-  // Tray slots, laid out by advance width at tray size.
+  // Tray slots, laid out by outline width at tray size so the gaps look even.
+  // x0 and w span the outline; ox is where the glyph's origin goes.
   const slots = useMemo(() => {
     let x = TRAY_PAD;
-    return ALPHABET.map((char) => {
-      const w = glyphs.glyphs[char].advance * sT;
-      const slot = { char, x0: x, w };
+    return chars.map((char) => {
+      const [x1, , x2] = glyphs.glyphs[char].bbox;
+      const w = (x2 - x1) * sT;
+      const slot = { char, x0: x, w, ox: x - x1 * sT };
       x += w + TRAY_GAP;
       return slot;
     });
-  }, [glyphs, sT]);
+  }, [glyphs, chars, sT]);
   const trayWidth = slots.at(-1).x0 + slots.at(-1).w + TRAY_PAD;
   const maxScroll = Math.max(0, trayWidth - width);
   const scroll = clamp(scrollX, 0, maxScroll);
@@ -146,7 +151,7 @@ export default function Stage({
 
   function pickUpFromTray(char, p) {
     const slot = slots.find((s) => s.char === char);
-    const ox = slot.x0 - scroll;
+    const ox = slot.ox - scroll;
     const oy = L.tray.baseline;
     gesture.current = { ...gesture.current, type: 'letter', char, gu: (p.x - ox) / sT, gv: (p.y - oy) / sT };
     setGhost({ char, ox, oy, s: sT });
@@ -188,9 +193,14 @@ export default function Stage({
         return;
       }
     }
-    // Off the canvas: back to its tray slot.
+    // Off the canvas: back to its tray slot. A letter outside the tray's set
+    // (the editor's set was switched after placing it) just goes away.
     const slot = slots.find((s) => s.char === char);
-    flyGhost({ ox: slot.x0 - scroll, oy: L.tray.baseline, s: sT }, motion.letterReturn, () => {});
+    if (!slot) {
+      setGhost(null);
+      return;
+    }
+    flyGhost({ ox: slot.ox - scroll, oy: L.tray.baseline, s: sT }, motion.letterReturn, () => {});
   }
 
   function trayCharAt(p) {
@@ -479,12 +489,12 @@ export default function Stage({
       {/* Tray */}
       <g className={`fades ${checking ? 'hidden' : ''}`}>
         {slots.map((slot) => {
-          const ox = slot.x0 - scroll;
-          if (inPlay(slot.char) || ox > width || ox + slot.w < 0) return null;
-          return <Glyph key={slot.char} glyph={glyphs.glyphs[slot.char]} ox={ox} oy={L.tray.baseline} s={sT} className="fill-fg" />;
+          const x = slot.x0 - scroll;
+          if (inPlay(slot.char) || x > width || x + slot.w < 0) return null;
+          return (
+            <Glyph key={slot.char} glyph={glyphs.glyphs[slot.char]} ox={slot.ox - scroll} oy={L.tray.baseline} s={sT} className="fill-fg" />
+          );
         })}
-        {/* Fill the strip under the track so letters stay cropped at the bottom. */}
-        <rect x={0} y={L.tray.trackTop + L.tray.trackH / 2} width={width} height={height} className="fill-bg" />
         <rect
           x={TRAY_PAD - scroll}
           y={L.tray.trackTop}

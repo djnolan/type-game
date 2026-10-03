@@ -1,6 +1,6 @@
 const KEY = 'type-game/editor-draft';
 
-export const emptyDraft = () => ({ id: 'w1-new', world: 1, scale: 0.6, letters: [] });
+export const emptyDraft = () => ({ id: 'w1-new', world: 1, scale: 0.6, charset: 'upper', letters: [] });
 
 export function loadDraft() {
   try {

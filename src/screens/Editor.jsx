@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Header from '../components/Header';
 import Stage from '../components/Stage';
 import WorldSwitcher from '../components/WorldSwitcher';
+import { CHARSETS, charsetOf, charsFor } from '../lib/charsets';
 import { getLevel, getWorld, levels, validateLevel, worlds } from '../lib/data';
 import { emptyDraft, loadDraft, saveDraft } from '../lib/draft';
 import { letterVisible, regrid } from '../lib/geometry';
@@ -10,13 +11,14 @@ import { getShape, setShape } from '../lib/shape';
 import { getTheme, setTheme } from '../lib/theme';
 import '../editor.css';
 
-export function formatLevel({ id, world, scale, letters }) {
+export function formatLevel({ id, world, scale, charset, letters }) {
   const rows = letters.map((l) => `    { "char": "${l.char}", "x": ${l.x}, "y": ${l.y} }`);
   return [
     '{',
     `  "id": ${JSON.stringify(id)},`,
     `  "world": ${world},`,
     `  "scale": ${scale},`,
+    `  "charset": ${JSON.stringify(charsetOf({ charset }))},`,
     `  "letters": [${rows.length ? `\n${rows.join(',\n')}\n  ` : ''}]`,
     '}',
     '',
@@ -68,7 +70,13 @@ export default function Editor() {
       return false;
     }
     placed.current = null;
-    setLevel({ id: next.id, world: next.world, scale: next.scale, letters: next.letters.map(({ char, x, y }) => ({ char, x, y })) });
+    setLevel({
+      id: next.id,
+      world: next.world,
+      scale: next.scale,
+      charset: charsetOf(next),
+      letters: next.letters.map(({ char, x, y }) => ({ char, x, y })),
+    });
     return true;
   }
 
@@ -130,6 +138,7 @@ export default function Editor() {
               glyphs={world.glyphs}
               grid={world.grid}
               scale={level.scale}
+              chars={charsFor(level)}
               letters={level.letters}
               onLettersChange={setLetters}
               target={level.letters}
@@ -158,7 +167,7 @@ export default function Editor() {
           <button
             onClick={() => {
               placed.current = null;
-              setLevel({ ...emptyDraft(), world: level.world });
+              setLevel({ ...emptyDraft(), world: level.world, charset: charsetOf(level) });
             }}
           >
             New
@@ -173,6 +182,16 @@ export default function Editor() {
           <div className="wide">
             World
             <WorldSwitcher value={world.world} onChange={switchWorld} />
+          </div>
+          <div className="wide">
+            Characters
+            <div className="segmented" role="radiogroup" aria-label="Characters">
+              {Object.entries(CHARSETS).map(([key, set]) => (
+                <button key={key} role="radio" aria-checked={charsetOf(level) === key} onClick={() => update({ charset: key })}>
+                  {set.label}
+                </button>
+              ))}
+            </div>
           </div>
           <label className="wide">
             Letter scale <span className="hint">cap height ÷ circle diameter</span>

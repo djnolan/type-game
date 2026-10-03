@@ -120,6 +120,27 @@
   width: 100%;
 }
 
+/* Character set switcher */
+.editor-panel .segmented {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.editor-panel .segmented button {
+  flex: 1;
+  height: 28px;
+  padding: 0 6px;
+  border-color: var(--grid);
+  font-size: 12px;
+}
+
+.editor-panel .segmented button[aria-checked='true'] {
+  border-color: var(--outline);
+  background: var(--fg);
+  color: var(--bg);
+}
+
 /* World switcher */
 .world-switcher {
   flex: none;
