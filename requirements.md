@@ -99,7 +99,7 @@ In play order. All are free from Google Fonts (SIL OFL).
 - Each world's typeface, weight and axis values, and grid density live in one config (`src/data/worlds.json`). Swapping a font or weight means editing the config and rerunning the glyph script.
 - Variable fonts (Bodoni Moda, Archivo, Jost, and EB Garamond's source) are pinned to a static instance at these values before conversion.
 - Placed letters have a touch target wider than their outline, so thin letterforms are as easy to pick up as heavy ones.
-- A dev-only world switcher previews the gameplay screen and level editor in any world.
+- The level editor's world switcher moves a draft between worlds, so each typeface can be tried in the editor and, via Play test, the gameplay screen.
 
 ### Level editor (dev-only)
 - Reuses the gameplay canvas and tray. The grid matches the chosen world.

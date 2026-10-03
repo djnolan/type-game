@@ -120,7 +120,50 @@
   width: 100%;
 }
 
-.editor-panel .world-switcher {
+/* World switcher */
+.world-switcher {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   padding: 4px 0 0;
   font-size: 12px;
+  color: var(--muted);
+}
+
+.world-switcher-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.world-switcher-buttons button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--grid);
+  border-radius: 6px;
+  background: none;
+  color: var(--fg);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.world-switcher-buttons button[aria-checked='true'] {
+  border-color: var(--outline);
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.world-switcher-buttons svg {
+  fill: currentColor;
+}
+
+.world-switcher-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

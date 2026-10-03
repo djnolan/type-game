@@ -21,7 +21,7 @@ npm run build      # production build in dist/ (no level editor)
 | `#/play/<level id>`   | Play any one level without saving progress (dev only).               |
 | `#/play/draft`        | Play the editor's current draft (dev only).                          |
 
-The dev-only routes and the world switcher exist under `npm run dev`. For a build that includes them,
+The dev-only routes exist under `npm run dev`. For a build that includes them,
 use `VITE_ENABLE_EDITOR=true npm run build`.
 
 To reset progress, clear the site's local storage or finish every level and
@@ -85,18 +85,12 @@ opentype.js converts the static instance to `src/data/glyphs/world-<n>.json`
 `grid` is read by the app directly, so changing it needs no rebuild. Levels
 already authored for that world keep their grid coordinates, so recheck them.
 
-### Dev world switcher
+### Trying each world
 
-In dev builds a row of world buttons sits above the game and in the level
-editor.
-
-- **Game:** plays the current level in another world's typeface and grid, with
-  letter positions moved to the matching points on the new grid. Choose the
-  level's own world to turn the preview off. The choice lasts for the browser
-  tab.
-- **Editor:** sets the draft's world and moves its letters to the new grid.
-  Positions always come from your last hand-placed layout, so flipping through
-  worlds and back returns the original positions.
+The level editor's World buttons switch the draft between worlds, moving its
+letters to the matching points on the new grid. Positions always come from your
+last hand-placed layout, so flipping through worlds and back returns the
+original positions. Use Play test to try the draft in the gameplay screen.
 
 ## Where things live
 
