@@ -1,0 +1,10 @@
+{
+  "id": "w3-01",
+  "world": 3,
+  "scale": 1,
+  "charset": "upper",
+  "letters": [
+    { "char": "N", "x": 2, "y": 22 },
+    { "char": "F", "x": -2, "y": 16 }
+  ]
+}
