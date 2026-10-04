@@ -24,8 +24,10 @@ npm run build      # production build in dist/ (no level editor)
 The dev-only routes exist under `npm run dev`. For a build that includes them,
 use `VITE_ENABLE_EDITOR=true npm run build`.
 
-To reset progress, clear the site's local storage or finish every level and
-tap "Start over".
+Tap the progress dots (top right) to open the placeholder world select. Jump
+to any world or level from there, or tap "Start over from world 1" to clear all
+saved progress. Skipping ahead doesn't mark the levels in between as completed,
+and the level you jumped to is remembered across reloads.
 
 ## Levels
 

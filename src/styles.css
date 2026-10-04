@@ -73,6 +73,7 @@ button {
 
 /* Game screen */
 .screen {
+  position: relative;
   height: 100dvh;
   max-width: 480px;
   margin: 0 auto;
@@ -145,4 +146,118 @@ button {
   border-radius: 999px;
   padding: 8px 16px;
   cursor: pointer;
+}
+
+/* Progress indicator as a button (opens world select) */
+.progress-button {
+  border: 0;
+  background: none;
+  padding: 10px 0 10px 10px;
+  display: flex;
+  cursor: pointer;
+}
+
+/* World select (placeholder) */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px 28px;
+  overflow-y: auto;
+}
+
+.overlay-head {
+  height: 48px;
+  flex: none;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-right: -14px;
+}
+
+.overlay-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.world-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-self: stretch;
+}
+
+.world-list li {
+  padding: 12px 0;
+  border-top: 1px solid var(--grid);
+}
+
+.world-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.world-row:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.world-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 15px;
+}
+
+.world-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.level-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0 0 42px;
+}
+
+.level-chip {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--grid);
+  border-radius: 999px;
+  background: none;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.level-chip[data-done] {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+
+.level-chip[aria-current] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.overlay-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
 }
