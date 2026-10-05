@@ -64,7 +64,7 @@ Top to bottom:
 
 ### Checking an answer
 1. Player taps **Done**.
-2. The UI clears away, leaving the canvas circle draggable.
+2. The UI clears away, leaving the canvas circle draggable. A cancel (×) button takes Done's place; tapping it returns to building.
 3. The player's letters switch to the **accent color** so they read against the target.
 4. The player drags the canvas circle up onto the target. The drag is vertical only. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
 5. **Pass:** the match must be perfect. Because the target always sits on the world's grid, a perfect match is always possible.
@@ -149,7 +149,6 @@ For now:
 
 - What does the player see on a failed check — just a retry, or a hint about what's off?
 - Should a failed check reset all the letters back to the tray, as a penalty? Depends on how hard the levels turn out. For now, letters are kept.
-- Once Done is tapped, the only way back to editing is a failed check. Is a way to cancel the check needed?
 - End-of-level and end-of-world screens and transitions
 - Final color palette and accent
 - Motion language and references

@@ -11,6 +11,7 @@ import {
   snapToGrid,
 } from '../lib/geometry';
 import { tray as trayConfig } from '../layout';
+import { XIcon } from './Icons';
 import { gestures, motion } from '../motion';
 
 const TRAY_PAD = trayConfig.sidePadding;
@@ -44,8 +45,8 @@ function Glyph({ glyph, ox, oy, s, ...rest }) {
 // The gameplay surface: target circle, canvas circle, Done button and letter
 // tray, drawn in one SVG in CSS px so dragging between them is one coordinate space.
 //
-// Phases: build → check (canvas draggable) → judging (snapped onto target)
-//         → pass | fail (fail returns to build).
+// Phases: build → check (canvas draggable; cancel returns to build)
+//         → judging (snapped onto target) → pass | fail (fail returns to build).
 export default function Stage({
   width,
   height,
@@ -275,6 +276,11 @@ export default function Stage({
     setPhase('check');
   }
 
+  function cancelCheck() {
+    setPhase('build');
+    moveCanvas({ x: 0, y: 0 }, motion.canvasReturn);
+  }
+
   function releaseCanvas() {
     const dy = L.target.cy - L.canvas.cy;
     const { x, y } = offsetRef.current;
@@ -309,6 +315,10 @@ export default function Stage({
       return;
     }
     if (phase === 'check') {
+      if (e.target.closest?.('[data-action="cancel"]')) {
+        cancelCheck();
+        return;
+      }
       const c = { x: L.canvas.cx + offset.x, y: L.canvas.cy + offset.y };
       if (!insideShape(p.x, p.y, { ...L.canvas, cx: c.x, cy: c.y }, shape)) return;
       canvasAnim.current?.stop();
@@ -515,6 +525,20 @@ export default function Stage({
         >
           <circle cx={L.done.cx} cy={L.done.cy} r={L.done.r} className="fill-bg stroke-outline" />
           <circle cx={L.done.cx} cy={L.done.cy} r={4} className="fill-accent" />
+        </g>
+      )}
+
+      {/* Cancel: in Done's spot while the canvas is draggable, back to building. */}
+      {checkable && (
+        <g
+          data-action="cancel"
+          className={`fades ${phase === 'check' ? '' : 'hidden'}`}
+          style={{ cursor: 'pointer' }}
+          role="button"
+          aria-label="Cancel"
+        >
+          <circle cx={L.done.cx} cy={L.done.cy} r={L.done.r} className="fill-bg stroke-outline" />
+          <XIcon transform={`translate(${L.done.cx - 7} ${L.done.cy - 7}) scale(${14 / 24})`} style={{ stroke: 'var(--fg)' }} />
         </g>
       )}
 
