@@ -6,6 +6,9 @@
   --grid: #c9c5bd;
   --outline: #151514;
   --muted: #8a867e;
+  /* Opacity of the player's accent letters while checking, so the target's
+     edges show through them as the canvas is dragged over it. */
+  --check-letter-opacity: 0.85;
 
   --outline-width: 1.5px;
   --ui-font: 'DM Sans', system-ui, sans-serif;
@@ -70,7 +73,6 @@ button {
 .fill-grid { fill: var(--grid); }
 .fill-none { fill: none; }
 .stroke-outline { stroke: var(--outline); stroke-width: var(--outline-width); }
-.stroke-accent { stroke: var(--accent); stroke-width: var(--outline-width); }
 
 /* Game screen */
 .screen {

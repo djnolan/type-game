@@ -524,9 +524,12 @@ export default function Stage({
             {renderLetters(letters, L.canvasBox, undefined, true)}
           </g>
         )}
-        <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
-        {/* An accent border while the canvas is in drag mode. */}
-        <Board c={L.canvas} shape={shape} className={`fill-none ${building ? 'stroke-outline' : 'stroke-accent'}`} />
+        {/* Slightly see-through while checking, so the target's edges show. Set on
+            the group, so overlapping letters don't stack up darker. */}
+        <g clipPath={`url(#canvas-${uid})`} style={checking ? { opacity: 'var(--check-letter-opacity)' } : undefined}>
+          {renderLetters(letters, L.canvasBox, letterClass, building)}
+        </g>
+        <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
       </g>
 
       {/* Done */}
