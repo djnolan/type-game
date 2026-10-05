@@ -414,7 +414,6 @@ export default function Stage({
 
   const building = phase === 'build';
   const checking = !building;
-  const letterClass = checking ? 'fill-accent' : 'fill-fg';
   const cell = L.D / grid;
   const zone = dropZone();
 
@@ -489,15 +488,22 @@ export default function Stage({
         <clipPath id={`canvas-${uid}`}>
           <Board c={L.canvas} shape={shape} />
         </clipPath>
+        {/* Everywhere but the target, for the part of the canvas that isn't over it. */}
+        <mask id={`off-target-${uid}`} maskUnits="userSpaceOnUse" x={0} y={0} width={width} height={height}>
+          <rect width={width} height={height} fill="white" />
+          <Board c={L.target} shape={shape} fill="black" />
+        </mask>
         <clipPath id={`zone-${uid}`}>
           <rect x={zone.left} y={zone.top} width={zone.right - zone.left} height={zone.bottom - zone.top} />
         </clipPath>
       </defs>
 
-      {/* Target: the negative. Letters are knocked out of a solid circle, so the
-          player's accent letters fill those spaces exactly when the canvas lands on it. */}
+      {/* Target: the exact negative of the canvas, with the same two tokens
+          swapped: background-colored letters knocked out of a foreground circle.
+          Once a pass is confirmed its letters go, leaving a plain circle for the
+          clean finish below. */}
       <Board c={L.target} shape={shape} className="fill-fg" />
-      <g clipPath={`url(#target-${uid})`}>{renderLetters(target, L.targetBox, 'fill-bg', false)}</g>
+      {phase !== 'pass' && <g clipPath={`url(#target-${uid})`}>{renderLetters(target, L.targetBox, 'fill-bg', false)}</g>}
       <Board c={L.target} shape={shape} className="fill-none stroke-outline" />
 
       {caption && (
@@ -507,15 +513,33 @@ export default function Stage({
         </text>
       )}
 
-      {/* Canvas */}
+      {/* Canvas, where it isn't over the target. */}
+      <g mask={`url(#off-target-${uid})`}>
+        <g transform={`translate(${offset.x} ${offset.y})`}>
+          <Board
+            c={L.canvas}
+            shape={shape}
+            className="fill-bg"
+            style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
+          />
+          <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
+          <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, 'fill-fg', building)}</g>
+        </g>
+      </g>
+
+      {/* Canvas over the target: blended with Difference, live while dragging.
+          Positive over negative cancels to one flat neutral wherever they match.
+          Mismatches (letter on letter, field on field) come out near black.
+          Once a pass is confirmed, only the canvas field is blended over the
+          now plain target, a clean solid circle with no anti-aliased seams. */}
+      <g clipPath={`url(#target-${uid})`} style={{ mixBlendMode: 'difference', pointerEvents: 'none' }}>
+        <g transform={`translate(${offset.x} ${offset.y})`}>
+          <Board c={L.canvas} shape={shape} className="fill-bg" />
+          {phase !== 'pass' && <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, 'fill-fg', false)}</g>}
+        </g>
+      </g>
+
       <g transform={`translate(${offset.x} ${offset.y})`}>
-        <Board
-          c={L.canvas}
-          shape={shape}
-          className={building ? 'fill-bg' : 'fill-none'}
-          style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
-        />
-        <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
         {/* Invisible, uncropped copies of placed letters, so a letter that's
             mostly outside the circle can still be picked up by its hidden
             part. Kept within the drop zone so they never cover the tray. */}
@@ -524,8 +548,8 @@ export default function Stage({
             {renderLetters(letters, L.canvasBox, undefined, true)}
           </g>
         )}
-        <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
-        <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
+        {/* An accent border while the canvas is in drag mode. */}
+        <Board c={L.canvas} shape={shape} className={`fill-none ${building ? 'stroke-outline' : 'stroke-accent'}`} />
       </g>
 
       {/* Done */}
