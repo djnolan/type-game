@@ -3,7 +3,7 @@ import { animate } from '../lib/animate';
 import {
   computeLayout,
   glyphExtent,
-  glyphTouchesCircle,
+  glyphShowsInShape,
   insideShape,
   letterOrigin,
   matchesSolution,
@@ -193,11 +193,12 @@ export default function Stage({
 
   function moveLetter(p) {
     const g = gesture.current;
-    // Tray letters grow from tray size to puzzle size as they rise, reaching it
-    // partway up the canvas. Letters picked off the canvas keep puzzle size
-    // until they leave the drop zone, then shrink toward the tray.
-    const fullAt = g.from === 'tray' ? L.canvas.cy + L.D * (0.5 - gestures.growUntil) : L.dropBottom;
-    const t = clamp((L.tray.zoneTop - p.y) / (L.tray.zoneTop - fullAt), 0, 1);
+    // Letters grow to puzzle size as they rise, reaching it at the bottom of
+    // the drop zone, so they're always full size over the canvas. Tray letters
+    // start growing from where they were picked up, which spreads the growth
+    // over the whole lift. Letters picked off the canvas shrink below the zone.
+    const from = g.from === 'tray' ? Math.max(g.start.y, L.tray.zoneTop) : L.tray.zoneTop;
+    const t = clamp((from - p.y) / (from - L.dropBottom), 0, 1);
     const s = lerp(sT, sP, t * t * (3 - 2 * t));
     // Letters moved within the canvas stay cropped by it. Dragged out to be
     // removed, the cropped part fades in to show it will go back to the tray.
@@ -216,7 +217,7 @@ export default function Stage({
       const oy = p.y - gesture.current.gv * sP;
       const pos = snapToGrid(glyph, ox, oy, L.canvasBox, grid, sP);
       const to = letterOrigin(glyph, pos.x, pos.y, L.canvasBox, grid, sP);
-      if (glyphTouchesCircle(glyph, to.ox, to.oy, sP, L.canvas, shape)) {
+      if (glyphShowsInShape(glyph, to.ox, to.oy, sP, L.canvas, shape)) {
         flyGhost({ ...to, s: sP, out: 0 }, motion.letterSnap, () =>
           onLettersChange([...lettersRef.current.filter((l) => l.char !== char), { char, ...pos }]),
         );
@@ -375,8 +376,9 @@ export default function Stage({
     } else if (g.type === 'letter') {
       moveLetter(p);
     } else if (g.type === 'canvas') {
-      // Straight up and down only: the target is directly above.
-      setOffset({ x: 0, y: g.startOffset.y + dy });
+      // Straight up and down only: the target is directly above. It can't go
+      // past the target, so its top edge stops at the target's top edge.
+      setOffset({ x: 0, y: Math.max(L.target.cy - L.canvas.cy, g.startOffset.y + dy) });
     }
   }
 
@@ -414,6 +416,7 @@ export default function Stage({
   const checking = !building;
   const letterClass = checking ? 'fill-accent' : 'fill-fg';
   const cell = L.D / grid;
+  const zone = dropZone();
 
   const dots = [];
   for (let i = 0; i <= grid; i++) {
@@ -486,6 +489,9 @@ export default function Stage({
         <clipPath id={`canvas-${uid}`}>
           <Board c={L.canvas} shape={shape} />
         </clipPath>
+        <clipPath id={`zone-${uid}`}>
+          <rect x={zone.left} y={zone.top} width={zone.right - zone.left} height={zone.bottom - zone.top} />
+        </clipPath>
       </defs>
 
       {/* Target: the negative. Letters are knocked out of a solid circle, so the
@@ -510,6 +516,14 @@ export default function Stage({
           style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
         />
         <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
+        {/* Invisible, uncropped copies of placed letters, so a letter that's
+            mostly outside the circle can still be picked up by its hidden
+            part. Kept within the drop zone so they never cover the tray. */}
+        {building && (
+          <g clipPath={`url(#zone-${uid})`} fill="transparent">
+            {renderLetters(letters, L.canvasBox, undefined, true)}
+          </g>
+        )}
         <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
         <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
       </g>

@@ -31,10 +31,6 @@ export const gestures = {
   canvasSnapRadius: 0.2,
   // How far past the circle letters may be placed, as a fraction of the diameter.
   placementOverhang: 0.3,
-  // A letter pulled from the tray reaches full puzzle size this far up the
-  // canvas: 0 is its bottom edge, 0.5 its middle. Higher spreads the growth
-  // over a longer drag.
-  growUntil: 0.25,
   // Width in px of the invisible stroke around placed letters that also picks them up.
   letterHitWidth: 16,
 };

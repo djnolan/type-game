@@ -55,9 +55,9 @@ Top to bottom:
 
 ### Dragging and placing
 - Only movement in this version. No scaling or rotating.
-- As a letter is dragged from the tray toward the canvas, it scales smoothly to the puzzle's letter size, reaching it partway up the canvas so the growth is gradual.
+- As a letter is dragged from the tray toward the canvas, it scales smoothly to the puzzle's letter size, starting from where it was picked up and reaching full size before it's over the canvas.
 - Letters **snap to the grid**. The grid density is set per world and gets finer in later worlds.
-- Letters can be placed partly outside the circle. Cropping is a core part of the puzzles, so the placement area extends past the circle edge, and the circle clips what shows.
+- Letters can be placed partly outside the circle. Cropping is a core part of the puzzles, so the placement area extends past the circle edge, and the circle clips what shows. Some of the letterform itself must show: a drop where none of it would sends the letter back to the tray. A letter that's mostly outside can still be picked up by its hidden part.
 - Placed letters can be **picked up and moved again**. While moved within the canvas, they stay cropped by the circle.
 - A letter can be **removed** by dragging it back to the tray or off the canvas. As a placed letter is dragged out past the canvas, its cropped part fades in, showing that letting go returns it to the tray.
 - All letters render in the same foreground color. Overlaps merge into one shape. There is no inversion or XOR.
@@ -66,7 +66,7 @@ Top to bottom:
 1. Player taps **Done**.
 2. The UI clears away, leaving the canvas circle draggable. A cancel (×) button takes Done's place; tapping it returns to building.
 3. The player's letters switch to the **accent color** so they read against the target.
-4. The player drags the canvas circle up onto the target. The drag is vertical only. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
+4. The player drags the canvas circle up onto the target. The drag is vertical only, and stops when the canvas's top edge reaches the target's. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
 5. **Pass:** the match must be perfect. Because the target always sits on the world's grid, a perfect match is always possible.
 6. **Fail:** unlimited retries. The canvas returns, with the player's letters kept, so they can adjust.
 

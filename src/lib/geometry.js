@@ -39,6 +39,29 @@ export function glyphTouchesCircle(glyph, ox, oy, s, circle, shape = 'circle') {
   return Math.hypot(nx - circle.cx, ny - circle.cy) < circle.r;
 }
 
+// True if any of the glyph's actual outline shows inside the board shape, not
+// just its bounding box, so a letter is never placed where it can't be seen
+// or picked up. Samples a grid of points `step` px apart.
+const paths = new Map();
+let hitCtx;
+export function glyphShowsInShape(glyph, ox, oy, s, circle, shape = 'circle', step = 2) {
+  if (typeof Path2D === 'undefined') return true;
+  hitCtx ??= document.createElement('canvas').getContext('2d');
+  if (!paths.has(glyph.d)) paths.set(glyph.d, new Path2D(glyph.d));
+  const path = paths.get(glyph.d);
+  const [x1, y1, x2, y2] = glyph.bbox;
+  const left = Math.max(ox + x1 * s, circle.cx - circle.r);
+  const right = Math.min(ox + x2 * s, circle.cx + circle.r);
+  const top = Math.max(oy + y1 * s, circle.cy - circle.r);
+  const bottom = Math.min(oy + y2 * s, circle.cy + circle.r);
+  for (let y = top; y <= bottom; y += step) {
+    for (let x = left; x <= right; x += step) {
+      if (insideShape(x, y, circle, shape) && hitCtx.isPointInPath(path, (x - ox) / s, (y - oy) / s)) return true;
+    }
+  }
+  return false;
+}
+
 // True if point (x, y) is inside the board shape.
 export function insideShape(x, y, circle, shape = 'circle', inset = 0) {
   const r = circle.r - inset;
