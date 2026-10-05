@@ -145,13 +145,10 @@ For now:
 - Mobile-first, portrait, touch and pointer input. Should also work with a mouse on desktop.
 - Save progress locally.
 
-## Known issues
-
-- A drop counts as on the canvas based on where the finger is, not where the letter is. A letter grabbed near its foot and dropped low on the canvas can go back to the tray even though it's visibly over the canvas, because the finger is below the drop zone.
-
 ## Open questions
 
 - What does the player see on a failed check — just a retry, or a hint about what's off?
+- Is the drop zone the right size? A drop counts as on the canvas by where the finger is, not where the letter is, which keeps removal predictable even when letters are huge. A letter dropped with the finger just below the canvas goes back to the tray even if it's visibly over the canvas. If that trips players up, let the zone reach a bit further below the canvas (`dropBottom` in `src/lib/geometry.js`).
 - Should a failed check reset all the letters back to the tray, as a penalty? Depends on how hard the levels turn out. For now, letters are kept.
 - End-of-level and end-of-world screens and transitions
 - Final color palette and accent
