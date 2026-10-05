@@ -1,0 +1,11 @@
+{
+  "id": "w2-04",
+  "world": 2,
+  "scale": 1.5,
+  "charset": "lower",
+  "letters": [
+    { "char": "g", "x": -5, "y": 16 },
+    { "char": "j", "x": 2, "y": 2 },
+    { "char": "f", "x": 2, "y": 26 }
+  ]
+}

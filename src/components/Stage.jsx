@@ -1,19 +1,21 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { animate } from '../lib/animate';
 import {
-  ALPHABET,
   computeLayout,
+  glyphExtent,
   glyphTouchesCircle,
+  insideShape,
   letterOrigin,
   matchesSolution,
   puzzleScale,
   snapToGrid,
 } from '../lib/geometry';
+import { tray as trayConfig } from '../layout';
 import { gestures, motion } from '../motion';
 
-const TRAY_PAD = 20;
-const TRAY_GAP = 10;
-const TICK_STEP = 30;
+const TRAY_PAD = trayConfig.sidePadding;
+const TRAY_GAP = trayConfig.letterGap;
+const TICK_STEP = trayConfig.tickStep;
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -27,6 +29,12 @@ const hitArea = {
   strokeLinejoin: 'round',
   vectorEffect: 'non-scaling-stroke',
 };
+
+// A circle, or its bounding square when the board shape is 'square' (temporary test).
+function Board({ c, shape, ...rest }) {
+  if (shape === 'square') return <rect x={c.cx - c.r} y={c.cy - c.r} width={2 * c.r} height={2 * c.r} {...rest} />;
+  return <circle cx={c.cx} cy={c.cy} r={c.r} {...rest} />;
+}
 
 function Glyph({ glyph, ox, oy, s, ...rest }) {
   return <path d={glyph.d} transform={`translate(${ox} ${oy}) scale(${s})`} {...rest} />;
@@ -43,17 +51,20 @@ export default function Stage({
   glyphs,
   grid,
   scale,
+  chars,
   letters,
   onLettersChange,
   target,
   solution,
   checkable = true,
+  shape = 'circle',
   onPass,
   onContinue,
 }) {
   const uid = useId().replace(/:/g, '');
   const svgRef = useRef(null);
-  const L = useMemo(() => computeLayout(width, height), [width, height]);
+  const extent = useMemo(() => glyphExtent(glyphs), [glyphs]);
+  const L = useMemo(() => computeLayout(width, height, shape, extent), [width, height, shape, extent]);
   const sP = puzzleScale(glyphs, scale, L.D);
   const sT = L.tray.cap / glyphs.capHeight;
 
@@ -82,16 +93,18 @@ export default function Stage({
   const lettersRef = useRef(letters);
   lettersRef.current = letters;
 
-  // Tray slots, laid out by advance width at tray size.
+  // Tray slots, laid out by outline width at tray size so the gaps look even.
+  // x0 and w span the outline; ox is where the glyph's origin goes.
   const slots = useMemo(() => {
     let x = TRAY_PAD;
-    return ALPHABET.map((char) => {
-      const w = glyphs.glyphs[char].advance * sT;
-      const slot = { char, x0: x, w };
+    return chars.map((char) => {
+      const [x1, , x2] = glyphs.glyphs[char].bbox;
+      const w = (x2 - x1) * sT;
+      const slot = { char, x0: x, w, ox: x - x1 * sT };
       x += w + TRAY_GAP;
       return slot;
     });
-  }, [glyphs, sT]);
+  }, [glyphs, chars, sT]);
   const trayWidth = slots.at(-1).x0 + slots.at(-1).w + TRAY_PAD;
   const maxScroll = Math.max(0, trayWidth - width);
   const scroll = clamp(scrollX, 0, maxScroll);
@@ -138,7 +151,7 @@ export default function Stage({
 
   function pickUpFromTray(char, p) {
     const slot = slots.find((s) => s.char === char);
-    const ox = slot.x0 - scroll;
+    const ox = slot.ox - scroll;
     const oy = L.tray.baseline;
     gesture.current = { ...gesture.current, type: 'letter', char, gu: (p.x - ox) / sT, gv: (p.y - oy) / sT };
     setGhost({ char, ox, oy, s: sT });
@@ -173,16 +186,21 @@ export default function Stage({
       const oy = p.y - gesture.current.gv * sP;
       const pos = snapToGrid(glyph, ox, oy, L.canvasBox, grid, sP);
       const to = letterOrigin(glyph, pos.x, pos.y, L.canvasBox, grid, sP);
-      if (glyphTouchesCircle(glyph, to.ox, to.oy, sP, L.canvas)) {
+      if (glyphTouchesCircle(glyph, to.ox, to.oy, sP, L.canvas, shape)) {
         flyGhost({ ...to, s: sP }, motion.letterSnap, () =>
           onLettersChange([...lettersRef.current.filter((l) => l.char !== char), { char, ...pos }]),
         );
         return;
       }
     }
-    // Off the canvas: back to its tray slot.
+    // Off the canvas: back to its tray slot. A letter outside the tray's set
+    // (the editor's set was switched after placing it) just goes away.
     const slot = slots.find((s) => s.char === char);
-    flyGhost({ ox: slot.x0 - scroll, oy: L.tray.baseline, s: sT }, motion.letterReturn, () => {});
+    if (!slot) {
+      setGhost(null);
+      return;
+    }
+    flyGhost({ ox: slot.ox - scroll, oy: L.tray.baseline, s: sT }, motion.letterReturn, () => {});
   }
 
   function trayCharAt(p) {
@@ -262,7 +280,7 @@ export default function Stage({
     }
     if (phase === 'check') {
       const c = { x: L.canvas.cx + offset.x, y: L.canvas.cy + offset.y };
-      if (Math.hypot(p.x - c.x, p.y - c.y) > L.canvas.r) return;
+      if (!insideShape(p.x, p.y, { ...L.canvas, cx: c.x, cy: c.y }, shape)) return;
       canvasAnim.current?.stop();
       gesture.current = { id: e.pointerId, type: 'canvas', start: p, startOffset: offset };
     } else if (phase === 'build') {
@@ -361,7 +379,7 @@ export default function Stage({
     for (let j = 0; j <= grid; j++) {
       const x = L.canvasBox.x0 + i * cell;
       const y = L.canvasBox.y0 + j * cell;
-      if (Math.hypot(x - L.canvas.cx, y - L.canvas.cy) < L.canvas.r - 3) {
+      if (insideShape(x, y, L.canvas, shape, 3)) {
         dots.push(<circle key={`${i}-${j}`} cx={x} cy={y} r={1.2} className="fill-grid" />);
       }
     }
@@ -422,18 +440,18 @@ export default function Stage({
     >
       <defs>
         <clipPath id={`target-${uid}`}>
-          <circle cx={L.target.cx} cy={L.target.cy} r={L.target.r} />
+          <Board c={L.target} shape={shape} />
         </clipPath>
         <clipPath id={`canvas-${uid}`}>
-          <circle cx={L.canvas.cx} cy={L.canvas.cy} r={L.canvas.r} />
+          <Board c={L.canvas} shape={shape} />
         </clipPath>
       </defs>
 
       {/* Target: the negative. Letters are knocked out of a solid circle, so the
           player's accent letters fill those spaces exactly when the canvas lands on it. */}
-      <circle cx={L.target.cx} cy={L.target.cy} r={L.target.r} className="fill-fg" />
+      <Board c={L.target} shape={shape} className="fill-fg" />
       <g clipPath={`url(#target-${uid})`}>{renderLetters(target, L.targetBox, 'fill-bg', false)}</g>
-      <circle cx={L.target.cx} cy={L.target.cy} r={L.target.r} className="fill-none stroke-outline" />
+      <Board c={L.target} shape={shape} className="fill-none stroke-outline" />
 
       {caption && (
         <text x={L.canvas.cx} y={L.canvas.cy} textAnchor="middle" className="stage-caption">
@@ -443,16 +461,15 @@ export default function Stage({
 
       {/* Canvas */}
       <g transform={`translate(${offset.x} ${offset.y})`}>
-        <circle
-          cx={L.canvas.cx}
-          cy={L.canvas.cy}
-          r={L.canvas.r}
+        <Board
+          c={L.canvas}
+          shape={shape}
           className={building ? 'fill-bg' : 'fill-none'}
           style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
         />
         <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
         <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
-        <circle cx={L.canvas.cx} cy={L.canvas.cy} r={L.canvas.r} className="fill-none stroke-outline" />
+        <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
       </g>
 
       {/* Done */}
@@ -471,13 +488,6 @@ export default function Stage({
 
       {/* Tray */}
       <g className={`fades ${checking ? 'hidden' : ''}`}>
-        {slots.map((slot) => {
-          const ox = slot.x0 - scroll;
-          if (inPlay(slot.char) || ox > width || ox + slot.w < 0) return null;
-          return <Glyph key={slot.char} glyph={glyphs.glyphs[slot.char]} ox={ox} oy={L.tray.baseline} s={sT} className="fill-fg" />;
-        })}
-        {/* Fill the strip under the track so letters stay cropped at the bottom. */}
-        <rect x={0} y={L.tray.trackTop + L.tray.trackH / 2} width={width} height={height} className="fill-bg" />
         <rect
           x={TRAY_PAD - scroll}
           y={L.tray.trackTop}
@@ -487,6 +497,14 @@ export default function Stage({
           className="fill-bg stroke-outline"
         />
         {ticks}
+        {/* Letters sit on the track's top edge, with descenders in front of it. */}
+        {slots.map((slot) => {
+          const x = slot.x0 - scroll;
+          if (inPlay(slot.char) || x > width || x + slot.w < 0) return null;
+          return (
+            <Glyph key={slot.char} glyph={glyphs.glyphs[slot.char]} ox={slot.ox - scroll} oy={L.tray.baseline} s={sT} className="fill-fg" />
+          );
+        })}
       </g>
 
       {/* The letter being dragged, unclipped and on top of everything. */}

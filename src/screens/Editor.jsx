@@ -2,20 +2,23 @@ import { useEffect, useRef, useState } from 'react';
 import Header from '../components/Header';
 import Stage from '../components/Stage';
 import WorldSwitcher from '../components/WorldSwitcher';
+import { CHARSETS, charsetOf, charsFor } from '../lib/charsets';
 import { getLevel, getWorld, levels, validateLevel, worlds } from '../lib/data';
 import { emptyDraft, loadDraft, saveDraft } from '../lib/draft';
 import { letterVisible, regrid } from '../lib/geometry';
 import { useSize } from '../lib/useSize';
+import { getShape, setShape } from '../lib/shape';
 import { getTheme, setTheme } from '../lib/theme';
 import '../editor.css';
 
-export function formatLevel({ id, world, scale, letters }) {
+export function formatLevel({ id, world, scale, charset, letters }) {
   const rows = letters.map((l) => `    { "char": "${l.char}", "x": ${l.x}, "y": ${l.y} }`);
   return [
     '{',
     `  "id": ${JSON.stringify(id)},`,
     `  "world": ${world},`,
     `  "scale": ${scale},`,
+    `  "charset": ${JSON.stringify(charsetOf({ charset }))},`,
     `  "letters": [${rows.length ? `\n${rows.join(',\n')}\n  ` : ''}]`,
     '}',
     '',
@@ -29,6 +32,7 @@ export default function Editor() {
   const [json, setJson] = useState(() => formatLevel(level));
   const [jsonError, setJsonError] = useState(null);
   const [theme, setThemeState] = useState(getTheme);
+  const [shape, setShapeState] = useState(getShape);
   const [notice, setNotice] = useState(null);
   const [hostRef, size] = useSize();
   const fileRef = useRef(null);
@@ -66,7 +70,13 @@ export default function Editor() {
       return false;
     }
     placed.current = null;
-    setLevel({ id: next.id, world: next.world, scale: next.scale, letters: next.letters.map(({ char, x, y }) => ({ char, x, y })) });
+    setLevel({
+      id: next.id,
+      world: next.world,
+      scale: next.scale,
+      charset: charsetOf(next),
+      letters: next.letters.map(({ char, x, y }) => ({ char, x, y })),
+    });
     return true;
   }
 
@@ -112,7 +122,7 @@ export default function Editor() {
     setTimeout(() => setNotice(null), 1500);
   }
 
-  const hidden = level.letters.filter((l) => !letterVisible(world.glyphs, l, level.scale, world.grid));
+  const hidden = level.letters.filter((l) => !letterVisible(world.glyphs, l, level.scale, world.grid, shape));
   const errors = validateLevel(level);
   const clash = getLevel(level.id);
 
@@ -128,10 +138,12 @@ export default function Editor() {
               glyphs={world.glyphs}
               grid={world.grid}
               scale={level.scale}
+              chars={charsFor(level)}
               letters={level.letters}
               onLettersChange={setLetters}
               target={level.letters}
               checkable={false}
+              shape={shape}
             />
           )}
         </div>
@@ -155,7 +167,7 @@ export default function Editor() {
           <button
             onClick={() => {
               placed.current = null;
-              setLevel({ ...emptyDraft(), world: level.world });
+              setLevel({ ...emptyDraft(), world: level.world, charset: charsetOf(level) });
             }}
           >
             New
@@ -170,6 +182,16 @@ export default function Editor() {
           <div className="wide">
             World
             <WorldSwitcher value={world.world} onChange={switchWorld} />
+          </div>
+          <div className="wide">
+            Characters
+            <div className="segmented" role="radiogroup" aria-label="Characters">
+              {Object.entries(CHARSETS).map(([key, set]) => (
+                <button key={key} role="radio" aria-checked={charsetOf(level) === key} onClick={() => update({ charset: key })}>
+                  {set.label}
+                </button>
+              ))}
+            </div>
           </div>
           <label className="wide">
             Letter scale <span className="hint">cap height ÷ circle diameter</span>
@@ -206,7 +228,7 @@ export default function Editor() {
             )}
           </div>
           {hidden.length > 0 && (
-            <p className="warn">Fully outside the circle, so players can’t see: {hidden.map((l) => l.char).join(', ')}</p>
+            <p className="warn">Fully outside the {shape}, so players can’t see: {hidden.map((l) => l.char).join(', ')}</p>
           )}
           {errors.length > 0 && <p className="warn">{errors.join('; ')}</p>}
           {clash && <p className="hint">Same ID as an existing level. Exporting will replace {clash.id}.json.</p>}
@@ -245,6 +267,19 @@ export default function Editor() {
               <option value="system">System</option>
               <option value="light">Light</option>
               <option value="dark">Dark</option>
+            </select>
+          </label>
+          <label>
+            Board shape <span className="hint">temporary test</span>
+            <select
+              value={shape}
+              onChange={(e) => {
+                setShape(e.target.value);
+                setShapeState(e.target.value);
+              }}
+            >
+              <option value="circle">Circle</option>
+              <option value="square">Square</option>
             </select>
           </label>
         </section>

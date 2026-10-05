@@ -1,9 +1,13 @@
+import { tray as trayConfig } from '../layout';
+
 // Puzzle space: the circle sits in a D×D box. The grid divides that box into
 // `grid` cells per side. A letter's grid point (x, y) is its anchor: the left
 // edge of its outline, on the baseline. Glyph outlines are in font units,
 // y-down, with the origin at the left of the advance on the baseline.
-
-export const ALPHABET = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
+//
+// Because the anchor is on the baseline, every character sits the same way:
+// capitals, x-height letters and figures rest on it, ascenders rise above it
+// and descenders (g, p, y, oldstyle figures) hang below it.
 
 // Pixels per font unit for a level's letter scale (cap height / diameter).
 export function puzzleScale(glyphs, scale, D) {
@@ -25,21 +29,30 @@ export function snapToGrid(glyph, ox, oy, box, grid, s) {
   };
 }
 
-// True if any part of the glyph's bounding box falls inside the circle.
-export function glyphTouchesCircle(glyph, ox, oy, s, circle) {
+// True if any part of the glyph's bounding box falls inside the circle, or
+// inside its bounding square when the board shape is 'square' (temporary test).
+export function glyphTouchesCircle(glyph, ox, oy, s, circle, shape = 'circle') {
   const [x1, y1, x2, y2] = glyph.bbox;
   const nx = Math.max(ox + x1 * s, Math.min(circle.cx, ox + x2 * s));
   const ny = Math.max(oy + y1 * s, Math.min(circle.cy, oy + y2 * s));
+  if (shape === 'square') return Math.abs(nx - circle.cx) < circle.r && Math.abs(ny - circle.cy) < circle.r;
   return Math.hypot(nx - circle.cx, ny - circle.cy) < circle.r;
 }
 
+// True if point (x, y) is inside the board shape.
+export function insideShape(x, y, circle, shape = 'circle', inset = 0) {
+  const r = circle.r - inset;
+  if (shape === 'square') return Math.abs(x - circle.cx) < r && Math.abs(y - circle.cy) < r;
+  return Math.hypot(x - circle.cx, y - circle.cy) < r;
+}
+
 // Same check in abstract puzzle space, for validating level data.
-export function letterVisible(glyphs, letter, scale, grid) {
+export function letterVisible(glyphs, letter, scale, grid, shape = 'circle') {
   const D = 1000;
   const glyph = glyphs.glyphs[letter.char];
   const s = puzzleScale(glyphs, scale, D);
   const { ox, oy } = letterOrigin(glyph, letter.x, letter.y, { x0: 0, y0: 0, D }, grid, s);
-  return glyphTouchesCircle(glyph, ox, oy, s, { cx: D / 2, cy: D / 2, r: D / 2 });
+  return glyphTouchesCircle(glyph, ox, oy, s, { cx: D / 2, cy: D / 2, r: D / 2 }, shape);
 }
 
 // A check passes only when every letter sits exactly on its solution grid point.
@@ -48,15 +61,26 @@ export function matchesSolution(letters, solution) {
   return solution.every((sol) => letters.some((l) => l.char === sol.char && l.x === sol.x && l.y === sol.y));
 }
 
-// Screen layout for the gameplay stage, in CSS px.
-export function computeLayout(W, H) {
-  const trackH = 32;
-  const trackBottom = H - 14;
+// How far the world's characters reach above the baseline, in cap heights,
+// so the tray can fit the tallest ascender.
+export function glyphExtent(glyphs) {
+  let above = 1;
+  for (const [char, g] of Object.entries(glyphs.glyphs)) {
+    if (char !== '*') above = Math.max(above, -g.bbox[1] / glyphs.capHeight);
+  }
+  return { above };
+}
+
+// Screen layout for the gameplay stage, in CSS px. Tray values are in src/layout.js.
+export function computeLayout(W, H, shape = 'circle', extent = { above: 1.15 }) {
+  const t = trayConfig;
+  const trackH = t.trackHeight;
+  const trackBottom = H - t.bottomMargin;
   const trackTop = trackBottom - trackH;
-  const trayCap = Math.min(88, W * 0.22);
-  const trayBaseline = trackTop + trayCap * 0.52;
-  const trayLetterTop = trayBaseline - trayCap;
-  const trayZoneTop = trayLetterTop - 14;
+  const trayCap = Math.min(t.capHeight, W * t.capHeightMaxWidthFraction);
+  const trayBaseline = trackTop - t.baselineAboveTrack;
+  const trayLetterTop = trayBaseline - extent.above * trayCap;
+  const trayZoneTop = trayLetterTop - t.pickUpMargin;
 
   const gap = 22;
   const minTop = 6;
@@ -68,7 +92,12 @@ export function computeLayout(W, H) {
   const cx = W / 2;
   const target = { cx, cy: top + D / 2, r: D / 2 };
   const canvas = { cx, cy: top + D + gap + D / 2, r: D / 2 };
-  const done = { cx: Math.min(W - 24, cx + D / 2 + 34), cy: canvas.cy - D / 2 - 4, r: 15 };
+  // A square board fills its top-right corner, so Done drops to beside the
+  // canvas's vertical middle when the board shape is 'square' (temporary test).
+  const done =
+    shape === 'square'
+      ? { cx: Math.min(W - 20, cx + D / 2 + 30), cy: canvas.cy, r: 15 }
+      : { cx: Math.min(W - 24, cx + D / 2 + 34), cy: canvas.cy - D / 2 - 4, r: 15 };
 
   return {
     W,

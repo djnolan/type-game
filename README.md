@@ -24,8 +24,10 @@ npm run build      # production build in dist/ (no level editor)
 The dev-only routes exist under `npm run dev`. For a build that includes them,
 use `VITE_ENABLE_EDITOR=true npm run build`.
 
-To reset progress, clear the site's local storage or finish every level and
-tap "Start over".
+Tap the progress dots (top right) to open the placeholder world select. Jump
+to any world or level from there, or tap "Start over from world 1" to clear all
+saved progress. Skipping ahead doesn't mark the levels in between as completed,
+and the level you jumped to is remembered across reloads.
 
 ## Levels
 
@@ -37,6 +39,7 @@ order and are grouped by `world`.
   "id": "w1-01",
   "world": 1,
   "scale": 0.4,
+  "charset": "upper",
   "letters": [
     { "char": "L", "x": 2, "y": 6 },
     { "char": "O", "x": 4, "y": 8 }
@@ -45,8 +48,13 @@ order and are grouped by `world`.
 ```
 
 - `scale`: the letters' cap height as a fraction of the circle's diameter.
+- `charset`: which characters the tray offers: `upper` (A–Z), `lower` (a–z),
+  `numerals` (0–9) or `mixed` (A–Z and a–z, paired as Aa Bb Cc …). Levels
+  without it are `upper`. Every letter must be in the level's set. Choose it in
+  the editor's Characters switch.
 - `x`, `y`: grid point of the letter's anchor. The anchor is the left edge of
-  the outline, on the baseline. `(0, 0)` is the top-left corner of the
+  the outline, on the baseline, so ascenders rise above it and descenders
+  (g, p, y, oldstyle figures) hang below it. `(0, 0)` is the top-left corner of the
   circle's bounding square. Values can be negative or past the grid size,
   because letters can sit partly outside the circle.
 - Grid density per world is set in `src/data/worlds.json` (cells across the
@@ -80,7 +88,8 @@ npm run glyphs -- 4   # one world
 This needs Python 3 with fontTools (`pip install fonttools brotli`). Variable
 fonts are pinned at the configured axis values with fontTools' instancer, then
 opentype.js converts the static instance to `src/data/glyphs/world-<n>.json`
-(A–Z, `*` and metrics). Only those files are committed and shipped.
+(A–Z, a–z, 0–9, `*` and metrics). Figures use each font's default numeral
+style, so Zilla Slab's are oldstyle.. Only those files are committed and shipped.
 
 `grid` is read by the app directly, so changing it needs no rebuild. Levels
 already authored for that world keep their grid coordinates, so recheck them.
@@ -96,6 +105,8 @@ original positions. Use Play test to try the draft in the gameplay screen.
 
 - `src/styles.css`: color tokens for light and dark mode.
 - `src/motion.js`: every motion and gesture value.
+- `src/layout.js`: tray letter size, spacing and position.
+- `src/lib/charsets.js`: the character sets a level's tray can offer.
 - `src/lib/animate.js`: tween and spring animation that can be interrupted.
 - `src/lib/geometry.js`: grid, layout and answer-check math.
 - `src/components/Stage.jsx`: the gameplay surface (target, canvas, tray, dragging, checking).

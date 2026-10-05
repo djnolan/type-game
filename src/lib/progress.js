@@ -2,6 +2,8 @@ import { useCallback, useState } from 'react';
 import { levels, worlds } from './data';
 
 const KEY = 'type-game/progress/v1';
+// The level on screen, so a jump from world select survives a reload.
+const CURRENT_KEY = 'type-game/progress/current';
 
 function load() {
   try {
@@ -44,6 +46,30 @@ export function useProgress() {
 // Levels unlock in order, so the current level is the first one not completed.
 export function currentLevel(completed) {
   return levels.find((l) => !completed.has(l.id)) ?? null;
+}
+
+// After a level: the next one not completed after it, else the first one not
+// completed anywhere (needed once world select can skip ahead).
+export function nextLevel(completed, afterId) {
+  const i = levels.findIndex((l) => l.id === afterId);
+  return levels.slice(i + 1).find((l) => !completed.has(l.id)) ?? currentLevel(completed);
+}
+
+export function loadCurrentId() {
+  try {
+    return localStorage.getItem(CURRENT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveCurrentId(id) {
+  try {
+    if (id) localStorage.setItem(CURRENT_KEY, id);
+    else localStorage.removeItem(CURRENT_KEY);
+  } catch {
+    // ignore
+  }
 }
 
 // Per-world state for the progress indicator.

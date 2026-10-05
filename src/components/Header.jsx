@@ -1,6 +1,7 @@
 import ProgressIndicator from './ProgressIndicator';
 
-export default function Header({ onBack, worlds }) {
+// onWorlds makes the progress indicator a button (opens world select).
+export default function Header({ onBack, worlds, onWorlds }) {
   return (
     <header className="header">
       <button className="icon-button" onClick={onBack} aria-label="Back">
@@ -8,7 +9,14 @@ export default function Header({ onBack, worlds }) {
           <path d="M12.5 3.5 6 10l6.5 6.5" className="fill-none stroke-outline" style={{ strokeWidth: 1.8 }} />
         </svg>
       </button>
-      {worlds && <ProgressIndicator worlds={worlds} />}
+      {worlds &&
+        (onWorlds ? (
+          <button className="progress-button" onClick={onWorlds} aria-label="Worlds">
+            <ProgressIndicator worlds={worlds} />
+          </button>
+        ) : (
+          <ProgressIndicator worlds={worlds} />
+        ))}
     </header>
   );
 }

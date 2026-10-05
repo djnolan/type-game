@@ -1,0 +1,11 @@
+{
+  "id": "w3-04",
+  "world": 3,
+  "scale": 1,
+  "charset": "upper",
+  "letters": [
+    { "char": "Z", "x": 1, "y": 10 },
+    { "char": "Q", "x": -5, "y": 17 },
+    { "char": "S", "x": 8, "y": 19 }
+  ]
+}
