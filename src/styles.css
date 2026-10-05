@@ -70,7 +70,6 @@ button {
 .fill-grid { fill: var(--grid); }
 .fill-none { fill: none; }
 .stroke-outline { stroke: var(--outline); stroke-width: var(--outline-width); }
-.stroke-accent { stroke: var(--accent); stroke-width: var(--outline-width); }
 
 /* Game screen */
 .screen {

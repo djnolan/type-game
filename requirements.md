@@ -34,7 +34,7 @@ This first build is a **web prototype for iterating on core gameplay**. It may b
 Top to bottom:
 
 1. **Header.** Back button on the left. World progress indicator on the right.
-2. **Target circle.** The puzzle: letters cropped by the circle, merged into one solid shape. Shown as the exact negative of the canvas, using the same two color tokens swapped: background-colored letters knocked out of a foreground-colored circle. This holds in light and dark mode.
+2. **Target circle.** The puzzle: letters cropped by the circle, merged into one solid shape. Shown in reverse (background-colored letters knocked out of a solid circle) so the player's letters fill the spaces when dragged up to check.
 3. **Canvas circle.** Same size as the target, with a dot grid in the background. The player builds their answer here.
 4. **Done button.** A small circular button with an accent-colored dot, beside the canvas.
 5. **Letter tray.** A full A–Z row of large letters, cropped at the bottom of the screen, with a tick-mark track under it.
@@ -65,9 +65,9 @@ Top to bottom:
 ### Checking an answer
 1. Player taps **Done**.
 2. The UI clears away, leaving the canvas circle draggable. A cancel (×) button takes Done's place; tapping it returns to building.
-3. The canvas border turns the **accent color** while it's draggable, and goes back to normal if the player cancels. The letters keep their normal color.
-4. The player drags the canvas circle up onto the target. Where they overlap, the canvas blends with the target using **Difference**, live while dragging. Positive over negative cancels to one flat neutral wherever the answer matches; mismatches show as dark slivers. The blend uses neutral tones only, never the accent. The drag is vertical only, and stops when the canvas's top edge reaches the target's. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
-5. **Pass:** the match must be perfect. Because the target always sits on the world's grid, a perfect match is always possible. Anti-aliased edges leave faint seams in the blend even at a perfect match, so once a pass is confirmed the blend is replaced by a clean solid circle. Success feedback beyond that is a placeholder for now.
+3. The player's letters switch to the **accent color** so they read against the target.
+4. The player drags the canvas circle up onto the target. The drag is vertical only, and stops when the canvas's top edge reaches the target's. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
+5. **Pass:** the match must be perfect. Because the target always sits on the world's grid, a perfect match is always possible.
 6. **Fail:** unlimited retries. The canvas returns, with the player's letters kept, so they can adjust.
 
 Since each letter is used once, the check compares each placed letter's grid position against the solution.
