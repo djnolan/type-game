@@ -10,9 +10,11 @@ export const tray = {
   // width on narrow screens, whichever is smaller.
   capHeight: 48,
   capHeightMaxWidthFraction: 0.13,
-  // Space between characters, and at both ends of the row.
+  // Space between characters, and between the track and the screen edges.
   letterGap: 14,
   sidePadding: 20,
+  // Space inside the track's ends, so the first and last letters sit within it.
+  trackInset: 16,
   // Baseline position relative to the top edge of the track: 0 sits the
   // letters right on it, positive raises them.
   baselineAboveTrack: 0,

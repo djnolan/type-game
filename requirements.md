@@ -55,18 +55,18 @@ Top to bottom:
 
 ### Dragging and placing
 - Only movement in this version. No scaling or rotating.
-- As a letter is dragged from the tray toward the canvas, it scales smoothly to the puzzle's letter size.
+- As a letter is dragged from the tray toward the canvas, it scales smoothly to the puzzle's letter size, reaching it partway up the canvas so the growth is gradual.
 - Letters **snap to the grid**. The grid density is set per world and gets finer in later worlds.
 - Letters can be placed partly outside the circle. Cropping is a core part of the puzzles, so the placement area extends past the circle edge, and the circle clips what shows.
-- Placed letters can be **picked up and moved again**.
-- A letter can be **removed** by dragging it back to the tray or off the canvas.
+- Placed letters can be **picked up and moved again**. While moved within the canvas, they stay cropped by the circle.
+- A letter can be **removed** by dragging it back to the tray or off the canvas. As a placed letter is dragged out past the canvas, its cropped part fades in, showing that letting go returns it to the tray.
 - All letters render in the same foreground color. Overlaps merge into one shape. There is no inversion or XOR.
 
 ### Checking an answer
 1. Player taps **Done**.
 2. The UI clears away, leaving the canvas circle draggable.
 3. The player's letters switch to the **accent color** so they read against the target.
-4. The player drags the canvas circle up onto the target. Near alignment, it snaps into place.
+4. The player drags the canvas circle up onto the target. The drag is vertical only. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
 5. **Pass:** the match must be perfect. Because the target always sits on the world's grid, a perfect match is always possible.
 6. **Fail:** unlimited retries. The canvas returns, with the player's letters kept, so they can adjust.
 
@@ -148,6 +148,8 @@ For now:
 ## Open questions
 
 - What does the player see on a failed check — just a retry, or a hint about what's off?
+- Should a failed check reset all the letters back to the tray, as a penalty? Depends on how hard the levels turn out. For now, letters are kept.
+- Once Done is tapped, the only way back to editing is a failed check. Is a way to cancel the check needed?
 - End-of-level and end-of-world screens and transitions
 - Final color palette and accent
 - Motion language and references
