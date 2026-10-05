@@ -6,10 +6,6 @@
   --grid: #c9c5bd;
   --outline: #151514;
   --muted: #8a867e;
-  /* Check view: target letters fade to this gray, and the player's accent
-     letters blend over them with this mode (multiply deepens the accent). */
-  --check-target: #a19d96;
-  --check-blend: multiply;
 
   --outline-width: 1.5px;
   --ui-font: 'DM Sans', system-ui, sans-serif;
@@ -24,8 +20,6 @@
     --grid: #403e3a;
     --outline: #ebe7df;
     --muted: #8d8980;
-    --check-target: #6a6761;
-    --check-blend: screen;
     color-scheme: dark;
   }
 }
@@ -37,8 +31,6 @@
   --grid: #403e3a;
   --outline: #ebe7df;
   --muted: #8d8980;
-  --check-target: #6a6761;
-  --check-blend: screen;
   color-scheme: dark;
 }
 
@@ -79,10 +71,6 @@ button {
 .fill-none { fill: none; }
 .stroke-outline { stroke: var(--outline); stroke-width: var(--outline-width); }
 .stroke-accent { stroke: var(--accent); stroke-width: var(--outline-width); }
-
-/* Target letters: foreground while building, the check gray while checking. */
-.target-letter { fill: var(--fg); transition: fill var(--fade-ms, 180ms) ease; }
-.target-letter.checking { fill: var(--check-target); }
 
 /* Game screen */
 .screen {

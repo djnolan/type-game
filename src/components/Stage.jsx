@@ -494,12 +494,10 @@ export default function Stage({
         </clipPath>
       </defs>
 
-      {/* Target: a positive, like the canvas. While checking, its letters fade
-          to a gray (--check-target) for the player's accent letters to blend over. */}
-      <Board c={L.target} shape={shape} className="fill-bg" />
-      <g clipPath={`url(#target-${uid})`}>
-        {renderLetters(target, L.targetBox, `target-letter ${checking ? 'checking' : ''}`, false)}
-      </g>
+      {/* Target: the negative. Letters are knocked out of a solid circle, so the
+          player's accent letters fill those spaces exactly when the canvas lands on it. */}
+      <Board c={L.target} shape={shape} className="fill-fg" />
+      <g clipPath={`url(#target-${uid})`}>{renderLetters(target, L.targetBox, 'fill-bg', false)}</g>
       <Board c={L.target} shape={shape} className="fill-none stroke-outline" />
 
       {caption && (
@@ -526,11 +524,7 @@ export default function Stage({
             {renderLetters(letters, L.canvasBox, undefined, true)}
           </g>
         )}
-        {/* While checking, the field is transparent and the accent letters blend
-            with the target (--check-blend): multiply in light mode, screen in dark. */}
-        <g clipPath={`url(#canvas-${uid})`} style={checking ? { mixBlendMode: 'var(--check-blend)' } : undefined}>
-          {renderLetters(letters, L.canvasBox, letterClass, building)}
-        </g>
+        <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
         {/* An accent border while the canvas is in drag mode. */}
         <Board c={L.canvas} shape={shape} className={`fill-none ${building ? 'stroke-outline' : 'stroke-accent'}`} />
       </g>
