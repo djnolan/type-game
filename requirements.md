@@ -34,7 +34,7 @@ This first build is a **web prototype for iterating on core gameplay**. It may b
 Top to bottom:
 
 1. **Header.** Back button on the left. World progress indicator on the right.
-2. **Target circle.** The puzzle: letters cropped by the circle, merged into one solid shape. Shown in reverse (background-colored letters knocked out of a solid circle) so the player's letters fill the spaces when dragged up to check.
+2. **Target circle.** The puzzle: letters cropped by the circle, merged into one solid shape. Shown as a positive, like the canvas: foreground letters on a background field.
 3. **Canvas circle.** Same size as the target, with a dot grid in the background. The player builds their answer here.
 4. **Done button.** A small circular button with an accent-colored dot, beside the canvas.
 5. **Letter tray.** A full A–Z row of large letters, cropped at the bottom of the screen, with a tick-mark track under it.
@@ -65,8 +65,8 @@ Top to bottom:
 ### Checking an answer
 1. Player taps **Done**.
 2. The UI clears away, leaving the canvas circle draggable. A cancel (×) button takes Done's place; tapping it returns to building.
-3. The player's letters switch to the **accent color** so they read against the target.
-4. The player drags the canvas circle up onto the target. The drag is vertical only, and stops when the canvas's top edge reaches the target's. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
+3. The target letters fade to a mid-gray. The player's letters switch to the **accent color** on a transparent canvas, so only the letters overlay the target. The canvas border turns accent while it's draggable, and goes back to normal if the player cancels.
+4. The player drags the canvas circle up onto the target. The accent letters blend with the gray target letters: Multiply in light mode, so overlaps become a deeper accent, and Screen in dark mode, so they become a brighter accent. The gray and the blend mode are color tokens (`--check-target`, `--check-blend`). The drag is vertical only, and stops when the canvas's top edge reaches the target's. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
 5. **Pass:** the match must be perfect. Because the target always sits on the world's grid, a perfect match is always possible.
 6. **Fail:** unlimited retries. The canvas returns, with the player's letters kept, so they can adjust.
 
@@ -144,6 +144,10 @@ For now:
 - **React + Vite, with SVG rendering.** Clipping to a circle and merging letter shapes come for free in SVG.
 - Mobile-first, portrait, touch and pointer input. Should also work with a mouse on desktop.
 - Save progress locally.
+
+## Known issues
+
+- A drop counts as on the canvas based on where the finger is, not where the letter is. A letter grabbed near its foot and dropped low on the canvas can go back to the tray even though it's visibly over the canvas, because the finger is below the drop zone.
 
 ## Open questions
 
