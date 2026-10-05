@@ -424,7 +424,7 @@ export default function Stage({
       const x = L.canvasBox.x0 + i * cell;
       const y = L.canvasBox.y0 + j * cell;
       if (insideShape(x, y, L.canvas, shape, 3)) {
-        dots.push(<circle key={`${i}-${j}`} cx={x} cy={y} r={1.2} className="fill-grid" />);
+        dots.push(<circle key={`${i}-${j}`} cx={x} cy={y} r={1.2} className="fill-grid-dot" />);
       }
     }
   }
@@ -524,11 +524,7 @@ export default function Stage({
             {renderLetters(letters, L.canvasBox, undefined, true)}
           </g>
         )}
-        {/* Slightly see-through while checking, so the target's edges show. Set on
-            the group, so overlapping letters don't stack up darker. */}
-        <g clipPath={`url(#canvas-${uid})`} style={checking ? { opacity: 'var(--check-letter-opacity)' } : undefined}>
-          {renderLetters(letters, L.canvasBox, letterClass, building)}
-        </g>
+        <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
         <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
       </g>
 
