@@ -3,7 +3,7 @@ import { animate } from '../lib/animate';
 import {
   computeLayout,
   glyphExtent,
-  glyphTouchesCircle,
+  glyphShowsInShape,
   insideShape,
   letterOrigin,
   matchesSolution,
@@ -11,10 +11,12 @@ import {
   snapToGrid,
 } from '../lib/geometry';
 import { tray as trayConfig } from '../layout';
+import { XIcon } from './Icons';
 import { gestures, motion } from '../motion';
 
 const TRAY_PAD = trayConfig.sidePadding;
 const TRAY_GAP = trayConfig.letterGap;
+const TRAY_INSET = trayConfig.trackInset;
 const TICK_STEP = trayConfig.tickStep;
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -43,8 +45,8 @@ function Glyph({ glyph, ox, oy, s, ...rest }) {
 // The gameplay surface: target circle, canvas circle, Done button and letter
 // tray, drawn in one SVG in CSS px so dragging between them is one coordinate space.
 //
-// Phases: build → check (canvas draggable) → judging (snapped onto target)
-//         → pass | fail (fail returns to build).
+// Phases: build → check (canvas draggable; cancel returns to build)
+//         → judging (snapped onto target) → pass | fail (fail returns to build).
 export default function Stage({
   width,
   height,
@@ -69,7 +71,9 @@ export default function Stage({
   const sT = L.tray.cap / glyphs.capHeight;
 
   const [phase, setPhase] = useState('build');
-  const [ghost, setGhostState] = useState(null); // { char, ox, oy, s }
+  // `out` is how much of the letter shows outside the canvas: 1 for tray letters,
+  // 0 for letters picked off the canvas until they're dragged out to be removed.
+  const [ghost, setGhostState] = useState(null); // { char, ox, oy, s, out }
   const [scrollX, setScrollX] = useState(0);
   const [offset, setOffsetState] = useState({ x: 0, y: 0 });
 
@@ -96,7 +100,7 @@ export default function Stage({
   // Tray slots, laid out by outline width at tray size so the gaps look even.
   // x0 and w span the outline; ox is where the glyph's origin goes.
   const slots = useMemo(() => {
-    let x = TRAY_PAD;
+    let x = TRAY_PAD + TRAY_INSET;
     return chars.map((char) => {
       const [x1, , x2] = glyphs.glyphs[char].bbox;
       const w = (x2 - x1) * sT;
@@ -105,7 +109,7 @@ export default function Stage({
       return slot;
     });
   }, [glyphs, chars, sT]);
-  const trayWidth = slots.at(-1).x0 + slots.at(-1).w + TRAY_PAD;
+  const trayWidth = slots.at(-1).x0 + slots.at(-1).w + TRAY_INSET + TRAY_PAD;
   const maxScroll = Math.max(0, trayWidth - width);
   const scroll = clamp(scrollX, 0, maxScroll);
 
@@ -142,7 +146,7 @@ export default function Stage({
       setGhost(null);
     };
     const g = ghostRef.current;
-    const from = { ox: g.ox, oy: g.oy, s: g.s };
+    const from = Object.fromEntries(Object.keys(to).map((k) => [k, g[k]]));
     const handle = animate(from, to, config, (v) => setGhost({ ...ghostRef.current, ...v }), finish);
     ghostAnim.current = { handle, finish };
   }
@@ -153,41 +157,68 @@ export default function Stage({
     const slot = slots.find((s) => s.char === char);
     const ox = slot.ox - scroll;
     const oy = L.tray.baseline;
-    gesture.current = { ...gesture.current, type: 'letter', char, gu: (p.x - ox) / sT, gv: (p.y - oy) / sT };
-    setGhost({ char, ox, oy, s: sT });
+    gesture.current = { ...gesture.current, type: 'letter', from: 'tray', char, gu: (p.x - ox) / sT, gv: (p.y - oy) / sT };
+    setGhost({ char, ox, oy, s: sT, out: 1 });
   }
 
   function pickUpFromCanvas(char, p) {
     const letter = letters.find((l) => l.char === char);
     const glyph = glyphs.glyphs[char];
     const { ox, oy } = letterOrigin(glyph, letter.x, letter.y, L.canvasBox, grid, sP);
-    gesture.current = { ...gesture.current, type: 'letter', char, gu: (p.x - ox) / sP, gv: (p.y - oy) / sP };
+    gesture.current = { ...gesture.current, type: 'letter', from: 'canvas', char, gu: (p.x - ox) / sP, gv: (p.y - oy) / sP };
     onLettersChange(letters.filter((l) => l.char !== char));
-    setGhost({ char, ox, oy, s: sP });
+    setGhost({ char, ox, oy, s: sP, out: 0 });
+  }
+
+  // Where a drop places the letter. Outside it, the letter goes back to the tray.
+  function dropZone() {
+    const over = L.D * gestures.placementOverhang;
+    const { x0, y0, D } = L.canvasBox;
+    return { left: x0 - over, right: x0 + D + over, top: y0 - over, bottom: L.dropBottom };
+  }
+
+  // 0 while the finger is over the canvas's bounding box, rising to 1 at the
+  // drop zone's edge, where letting go sends the letter back to the tray.
+  function removalAmount(p) {
+    const z = dropZone();
+    const { x0, y0, D } = L.canvasBox;
+    const ramp = (d, span) => clamp(d / Math.max(1, span), 0, 1);
+    return Math.max(
+      ramp(x0 - p.x, x0 - z.left),
+      ramp(p.x - (x0 + D), z.right - (x0 + D)),
+      ramp(y0 - p.y, y0 - z.top),
+      ramp(p.y - (y0 + D), z.bottom - (y0 + D)),
+    );
   }
 
   function moveLetter(p) {
     const g = gesture.current;
-    // Letters grow from tray size to puzzle size as they rise toward the canvas.
-    const t = clamp((L.tray.zoneTop - p.y) / (L.tray.zoneTop - L.dropBottom), 0, 1);
+    // Letters grow to puzzle size as they rise, reaching it at the bottom of
+    // the drop zone, so they're always full size over the canvas. Tray letters
+    // start growing from where they were picked up, which spreads the growth
+    // over the whole lift. Letters picked off the canvas shrink below the zone.
+    const from = g.from === 'tray' ? Math.max(g.start.y, L.tray.zoneTop) : L.tray.zoneTop;
+    const t = clamp((from - p.y) / (from - L.dropBottom), 0, 1);
     const s = lerp(sT, sP, t * t * (3 - 2 * t));
-    setGhost({ char: g.char, ox: p.x - g.gu * s, oy: p.y - g.gv * s, s });
+    // Letters moved within the canvas stay cropped by it. Dragged out to be
+    // removed, the cropped part fades in to show it will go back to the tray.
+    const out = g.from === 'tray' ? 1 : removalAmount(p);
+    setGhost({ char: g.char, ox: p.x - g.gu * s, oy: p.y - g.gv * s, s, out });
   }
 
   function dropLetter(p) {
     const { char } = gesture.current;
     const glyph = glyphs.glyphs[char];
-    const over = L.D * gestures.placementOverhang;
-    const { x0, y0, D } = L.canvasBox;
-    const inZone = p.x > x0 - over && p.x < x0 + D + over && p.y > y0 - over && p.y < L.dropBottom;
+    const z = dropZone();
+    const inZone = p.x > z.left && p.x < z.right && p.y > z.top && p.y < z.bottom;
 
     if (inZone) {
       const ox = p.x - gesture.current.gu * sP;
       const oy = p.y - gesture.current.gv * sP;
       const pos = snapToGrid(glyph, ox, oy, L.canvasBox, grid, sP);
       const to = letterOrigin(glyph, pos.x, pos.y, L.canvasBox, grid, sP);
-      if (glyphTouchesCircle(glyph, to.ox, to.oy, sP, L.canvas, shape)) {
-        flyGhost({ ...to, s: sP }, motion.letterSnap, () =>
+      if (glyphShowsInShape(glyph, to.ox, to.oy, sP, L.canvas, shape)) {
+        flyGhost({ ...to, s: sP, out: 0 }, motion.letterSnap, () =>
           onLettersChange([...lettersRef.current.filter((l) => l.char !== char), { char, ...pos }]),
         );
         return;
@@ -200,7 +231,7 @@ export default function Stage({
       setGhost(null);
       return;
     }
-    flyGhost({ ox: slot.ox - scroll, oy: L.tray.baseline, s: sT }, motion.letterReturn, () => {});
+    flyGhost({ ox: slot.ox - scroll, oy: L.tray.baseline, s: sT, out: 1 }, motion.letterReturn, () => {});
   }
 
   function trayCharAt(p) {
@@ -246,12 +277,18 @@ export default function Stage({
     setPhase('check');
   }
 
+  function cancelCheck() {
+    setPhase('build');
+    moveCanvas({ x: 0, y: 0 }, motion.canvasReturn);
+  }
+
   function releaseCanvas() {
     const dy = L.target.cy - L.canvas.cy;
     const { x, y } = offsetRef.current;
     const dist = Math.hypot(x, y - dy);
     if (dist > L.D * gestures.canvasSnapRadius) {
-      moveCanvas({ x: 0, y: 0 }, motion.canvasReturn, () => setPhase('build'));
+      // Not far enough: it drops back, still draggable, for another try.
+      moveCanvas({ x: 0, y: 0 }, motion.canvasReturn);
       return;
     }
     setPhase('judging');
@@ -279,6 +316,10 @@ export default function Stage({
       return;
     }
     if (phase === 'check') {
+      if (e.target.closest?.('[data-action="cancel"]')) {
+        cancelCheck();
+        return;
+      }
       const c = { x: L.canvas.cx + offset.x, y: L.canvas.cy + offset.y };
       if (!insideShape(p.x, p.y, { ...L.canvas, cx: c.x, cy: c.y }, shape)) return;
       canvasAnim.current?.stop();
@@ -335,7 +376,9 @@ export default function Stage({
     } else if (g.type === 'letter') {
       moveLetter(p);
     } else if (g.type === 'canvas') {
-      setOffset({ x: g.startOffset.x + dx, y: g.startOffset.y + dy });
+      // Straight up and down only: the target is directly above. It can't go
+      // past the target, so its top edge stops at the target's top edge.
+      setOffset({ x: 0, y: Math.max(L.target.cy - L.canvas.cy, g.startOffset.y + dy) });
     }
   }
 
@@ -373,6 +416,7 @@ export default function Stage({
   const checking = !building;
   const letterClass = checking ? 'fill-accent' : 'fill-fg';
   const cell = L.D / grid;
+  const zone = dropZone();
 
   const dots = [];
   for (let i = 0; i <= grid; i++) {
@@ -380,7 +424,7 @@ export default function Stage({
       const x = L.canvasBox.x0 + i * cell;
       const y = L.canvasBox.y0 + j * cell;
       if (insideShape(x, y, L.canvas, shape, 3)) {
-        dots.push(<circle key={`${i}-${j}`} cx={x} cy={y} r={1.2} className="fill-grid" />);
+        dots.push(<circle key={`${i}-${j}`} cx={x} cy={y} r={1.2} className="fill-grid-dot" />);
       }
     }
   }
@@ -445,6 +489,9 @@ export default function Stage({
         <clipPath id={`canvas-${uid}`}>
           <Board c={L.canvas} shape={shape} />
         </clipPath>
+        <clipPath id={`zone-${uid}`}>
+          <rect x={zone.left} y={zone.top} width={zone.right - zone.left} height={zone.bottom - zone.top} />
+        </clipPath>
       </defs>
 
       {/* Target: the negative. Letters are knocked out of a solid circle, so the
@@ -454,7 +501,8 @@ export default function Stage({
       <Board c={L.target} shape={shape} className="fill-none stroke-outline" />
 
       {caption && (
-        <text x={L.canvas.cx} y={L.canvas.cy} textAnchor="middle" className="stage-caption">
+        // Below the canvas's home spot, where the tray was.
+        <text x={L.canvas.cx} y={Math.min(L.canvas.cy + L.D / 2 + 36, height - 24)} textAnchor="middle" className="stage-caption">
           {caption}
         </text>
       )}
@@ -468,6 +516,14 @@ export default function Stage({
           style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
         />
         <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
+        {/* Invisible, uncropped copies of placed letters, so a letter that's
+            mostly outside the circle can still be picked up by its hidden
+            part. Kept within the drop zone so they never cover the tray. */}
+        {building && (
+          <g clipPath={`url(#zone-${uid})`} fill="transparent">
+            {renderLetters(letters, L.canvasBox, undefined, true)}
+          </g>
+        )}
         <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
         <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
       </g>
@@ -483,6 +539,20 @@ export default function Stage({
         >
           <circle cx={L.done.cx} cy={L.done.cy} r={L.done.r} className="fill-bg stroke-outline" />
           <circle cx={L.done.cx} cy={L.done.cy} r={4} className="fill-accent" />
+        </g>
+      )}
+
+      {/* Cancel: in Done's spot while the canvas is draggable, back to building. */}
+      {checkable && (
+        <g
+          data-action="cancel"
+          className={`fades ${phase === 'check' ? '' : 'hidden'}`}
+          style={{ cursor: 'pointer' }}
+          role="button"
+          aria-label="Cancel"
+        >
+          <circle cx={L.done.cx} cy={L.done.cy} r={L.done.r} className="fill-bg stroke-outline" />
+          <XIcon transform={`translate(${L.done.cx - 7} ${L.done.cy - 7}) scale(${14 / 24})`} style={{ stroke: 'var(--fg)' }} />
         </g>
       )}
 
@@ -507,9 +577,22 @@ export default function Stage({
         })}
       </g>
 
-      {/* The letter being dragged, unclipped and on top of everything. */}
-      {ghost && (
-        <Glyph glyph={glyphs.glyphs[ghost.char]} ox={ghost.ox} oy={ghost.oy} s={ghost.s} className="fill-fg" style={{ pointerEvents: 'none' }} />
+      {/* The letter being dragged, on top of everything. Cropped by the canvas
+          as much as `out` says, unclipped otherwise. */}
+      {ghost && ghost.out < 1 && (
+        <g clipPath={`url(#canvas-${uid})`}>
+          <Glyph glyph={glyphs.glyphs[ghost.char]} ox={ghost.ox} oy={ghost.oy} s={ghost.s} className="fill-fg" style={{ pointerEvents: 'none' }} />
+        </g>
+      )}
+      {ghost && ghost.out > 0 && (
+        <Glyph
+          glyph={glyphs.glyphs[ghost.char]}
+          ox={ghost.ox}
+          oy={ghost.oy}
+          s={ghost.s}
+          className="fill-fg"
+          style={{ pointerEvents: 'none', opacity: ghost.out }}
+        />
       )}
     </svg>
   );

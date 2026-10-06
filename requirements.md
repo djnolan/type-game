@@ -55,18 +55,18 @@ Top to bottom:
 
 ### Dragging and placing
 - Only movement in this version. No scaling or rotating.
-- As a letter is dragged from the tray toward the canvas, it scales smoothly to the puzzle's letter size.
+- As a letter is dragged from the tray toward the canvas, it scales smoothly to the puzzle's letter size, starting from where it was picked up and reaching full size before it's over the canvas.
 - Letters **snap to the grid**. The grid density is set per world and gets finer in later worlds.
-- Letters can be placed partly outside the circle. Cropping is a core part of the puzzles, so the placement area extends past the circle edge, and the circle clips what shows.
-- Placed letters can be **picked up and moved again**.
-- A letter can be **removed** by dragging it back to the tray or off the canvas.
+- Letters can be placed partly outside the circle. Cropping is a core part of the puzzles, so the placement area extends past the circle edge, and the circle clips what shows. Some of the letterform itself must show: a drop where none of it would sends the letter back to the tray. A letter that's mostly outside can still be picked up by its hidden part.
+- Placed letters can be **picked up and moved again**. While moved within the canvas, they stay cropped by the circle.
+- A letter can be **removed** by dragging it back to the tray or off the canvas. As a placed letter is dragged out past the canvas, its cropped part fades in, showing that letting go returns it to the tray.
 - All letters render in the same foreground color. Overlaps merge into one shape. There is no inversion or XOR.
 
 ### Checking an answer
 1. Player taps **Done**.
-2. The UI clears away, leaving the canvas circle draggable.
+2. The UI clears away, leaving the canvas circle draggable. A cancel (×) button takes Done's place; tapping it returns to building.
 3. The player's letters switch to the **accent color** so they read against the target.
-4. The player drags the canvas circle up onto the target. Near alignment, it snaps into place.
+4. The player drags the canvas circle up onto the target. The drag is vertical only, and stops when the canvas's top edge reaches the target's. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
 5. **Pass:** the match must be perfect. Because the target always sits on the world's grid, a perfect match is always possible.
 6. **Fail:** unlimited retries. The canvas returns, with the player's letters kept, so they can adjust.
 
@@ -148,6 +148,8 @@ For now:
 ## Open questions
 
 - What does the player see on a failed check — just a retry, or a hint about what's off?
+- Is the drop zone the right size? A drop counts as on the canvas by where the finger is, not where the letter is, which keeps removal predictable even when letters are huge. A letter dropped with the finger just below the canvas goes back to the tray even if it's visibly over the canvas. If that trips players up, let the zone reach a bit further below the canvas (`dropBottom` in `src/lib/geometry.js`).
+- Should a failed check reset all the letters back to the tray, as a penalty? Depends on how hard the levels turn out. For now, letters are kept.
 - End-of-level and end-of-world screens and transitions
 - Final color palette and accent
 - Motion language and references

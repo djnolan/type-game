@@ -6,6 +6,8 @@
   --grid: #c9c5bd;
   --outline: #151514;
   --muted: #8a867e;
+  /* Canvas dot grid, fainter than --grid (which the tray track ticks use). */
+  --grid-dot: #dcd9d2;
 
   --outline-width: 1.5px;
   --ui-font: 'DM Sans', system-ui, sans-serif;
@@ -20,6 +22,7 @@
     --grid: #403e3a;
     --outline: #ebe7df;
     --muted: #8d8980;
+    --grid-dot: #2a2926;
     color-scheme: dark;
   }
 }
@@ -31,6 +34,7 @@
   --grid: #403e3a;
   --outline: #ebe7df;
   --muted: #8d8980;
+  --grid-dot: #2a2926;
   color-scheme: dark;
 }
 
@@ -68,6 +72,7 @@ button {
 .fill-bg { fill: var(--bg); }
 .fill-accent { fill: var(--accent); }
 .fill-grid { fill: var(--grid); }
+.fill-grid-dot { fill: var(--grid-dot); }
 .fill-none { fill: none; }
 .stroke-outline { stroke: var(--outline); stroke-width: var(--outline-width); }
 
