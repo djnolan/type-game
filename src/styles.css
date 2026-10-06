@@ -1,13 +1,15 @@
-/* Color tokens. Not final; tweak here. Dark mode has its own values. */
+/* Color tokens: warm paper and ink. Tweak here. Dark mode has its own
+   bg/fg values; grid, outline and muted are mixed from them, so they follow
+   along. Never pure black or white. */
 :root {
-  --bg: #f3f1ec;
-  --fg: #151514;
-  --accent: #ff2b1c;
-  --grid: #c9c5bd;
-  --outline: #151514;
-  --muted: #8a867e;
+  --bg: #efeadf; /* warm paper */
+  --fg: #1d1b18; /* warm ink */
+  --accent: #e4502a; /* vermilion, same in both modes */
+  --outline: var(--fg);
+  --grid: color-mix(in srgb, var(--fg) 20%, var(--bg));
+  --muted: color-mix(in srgb, var(--fg) 52%, var(--bg));
   /* Canvas dot grid, fainter than --grid (which the tray track ticks use). */
-  --grid-dot: #dcd9d2;
+  --grid-dot: color-mix(in srgb, var(--fg) 11%, var(--bg));
 
   --outline-width: 1.5px;
   --ui-font: 'DM Sans', system-ui, sans-serif;
@@ -16,25 +18,15 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #131312;
-    --fg: #ebe7df;
-    --accent: #ff4b33;
-    --grid: #403e3a;
-    --outline: #ebe7df;
-    --muted: #8d8980;
-    --grid-dot: #2a2926;
+    --bg: #1a1916;
+    --fg: #e8e2d5;
     color-scheme: dark;
   }
 }
 
 :root[data-theme='dark'] {
-  --bg: #131312;
-  --fg: #ebe7df;
-  --accent: #ff4b33;
-  --grid: #403e3a;
-  --outline: #ebe7df;
-  --muted: #8d8980;
-  --grid-dot: #2a2926;
+  --bg: #1a1916;
+  --fg: #e8e2d5;
   color-scheme: dark;
 }
 

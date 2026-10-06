@@ -128,7 +128,14 @@ The game should never load font files for the game pieces. Only the UI font load
 - Minimal, close to brutalist. A stark, high-contrast palette with **one accent color**. The letterforms are the hero.
 - Thin outlines on the circles and controls. Very light dot grid.
 - **UI font: DM Sans.**
-- Colors are not final and won't be pure black and white. Define all colors as tokens (background, foreground, accent, grid, outline) so they're easy to tweak.
+- **Palette: warm paper and ink**, with a vermilion accent. Never pure black or pure white. Define all colors as tokens (background, foreground, accent, grid, outline) in `src/styles.css` so they're easy to tweak. The foreground is used for letters, outlines and UI text. Grid and muted colors are mixed from the background and foreground.
+
+  | Token      | Light                   | Dark      |
+  | ---------- | ----------------------- | --------- |
+  | Background | `#EFEADF` (warm paper)  | `#1A1916` |
+  | Foreground | `#1D1B18` (warm ink)    | `#E8E2D5` |
+  | Accent     | `#E4502A` (vermilion)   | `#E4502A` |
+
 - **Light and dark mode.** Follow the system setting by default. Dark mode gets its own token values, not an automatic inversion.
 
 ## Motion
