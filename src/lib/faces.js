@@ -82,17 +82,14 @@ export function canvasFace({ world, level, letters = [], D, shape }) {
   );
 }
 
-// A completed world's badge (placeholder art): its typeface's asterisk
-// knocked out of a solid circle, like the badge in the progress indicator.
-export function badgeFace({ world, D }) {
-  const g = world.glyphs.glyphs['*'];
-  const [x1, y1, x2, y2] = g.bbox;
-  const s = (D * 0.42) / Math.max(x2 - x1, y2 - y1);
-  const ox = D / 2 - ((x1 + x2) / 2) * s;
-  const oy = D / 2 - ((y1 + y2) / 2) * s;
+// A completed world's badge. Placeholder until the custom ampersand art per
+// world is ready: a UI-font ampersand knocked out of a solid circle.
+export function badgeFace({ D }) {
+  const r = D / 2;
   return svg(
     D,
-    board(D, 'circle', 'class="fill-fg"') + `<path d="${g.d}" transform="translate(${ox} ${oy}) scale(${s})" class="fill-bg"/>`,
+    board(D, 'circle', 'class="fill-fg"') +
+      `<text x="${r}" y="${r}" text-anchor="middle" dominant-baseline="central" style="font:500 ${Math.round(D * 0.46)}px var(--ui-font);fill:var(--bg)">&amp;</text>`,
   );
 }
 

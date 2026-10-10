@@ -92,7 +92,7 @@ npm run glyphs -- 4   # one world
 This needs Python 3 with fontTools (`pip install fonttools brotli`). Variable
 fonts are pinned at the configured axis values with fontTools' instancer, then
 opentype.js converts the static instance to `src/data/glyphs/world-<n>.json`
-(A–Z, a–z, 0–9, `*` and metrics). Figures use each font's default numeral
+(A–Z, a–z, 0–9 and metrics). Figures use each font's default numeral
 style, so Zilla Slab's are oldstyle.. Only those files are committed and shipped.
 
 `grid` is read by the app directly, so changing it needs no rebuild. Levels

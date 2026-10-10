@@ -40,8 +40,8 @@ Top to bottom:
 
 ### Progress indicator
 - One dot per world (5 worlds).
-- A completed world shows its asterisk badge.
-- The current world's dot fills like a circular progress bar as its levels are completed.
+- A completed world is a filled dot.
+- The current world has a small accent dot in its centre, and a thicker ring that fills like a donut chart as its levels are completed.
 - Future worlds are empty circles.
 
 ## Core interactions
@@ -112,15 +112,15 @@ The game should never load font files for the game pieces. Only the UI font load
 
 **Why:** the world typefaces may be purchased fonts, and their licenses may not cover bundling the font files in a web app or native app. Shipping only the outlines of the glyphs the game uses avoids distributing the fonts themselves.
 
-- Convert each world's typeface to SVG path data ahead of time (e.g. a build script using opentype.js). Output one glyph data file per world containing A–Z, the asterisk, and the metrics needed for positioning. Include only the glyphs the game uses.
+- Convert each world's typeface to SVG path data ahead of time (e.g. a build script using opentype.js). Output one glyph data file per world containing the characters the game uses (A–Z, a–z, 0–9) and the metrics needed for positioning. Include only the glyphs the game uses.
 - **Source font files never ship.** Keep them in a local folder that is gitignored and outside anything the build bundles or serves. Only the generated path data is committed and shipped.
 - The game renders letters from that path data only.
 - All five world typefaces go through this same pipeline. Variable fonts are first pinned to a static instance (fontTools' instancer), since opentype.js handles variable fonts poorly. Adding or swapping a font means dropping it in the local folder, editing the world config and rerunning the script.
 
 ## Rewards
 
-- Completing a world earns an **asterisk badge, drawn from that world's typeface's own asterisk glyph**.
-- In the prototype, the badge only needs to appear in the progress indicator.
+- Completing a world earns a **badge: a custom-designed ampersand per world**. Until the art is ready, the badge is a placeholder (a UI-font ampersand knocked out of a solid circle, `badgeFace` in `src/lib/faces.js`).
+- The badge appears on the world complete screen and in the world menu.
 
 ## Visual design
 

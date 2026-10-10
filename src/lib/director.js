@@ -1,6 +1,6 @@
-import { piePath } from '../components/ProgressIndicator';
+import { ringDash } from '../components/ProgressIndicator';
 import { transitions as T } from '../motion';
-import { easeOutCubic } from './easing';
+import { easeOutBack, easeOutCubic } from './easing';
 import { badgeFace, canvasFace, numberFace, solvedFace, targetFace } from './faces';
 import { createSequencer } from './sequence';
 
@@ -25,6 +25,21 @@ const STAGE_PARTS = ['target', 'canvas', 'done', 'tray', 'caption'];
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+// easeOutBack(k) peaks at 1 + 4k³ / 27(k + 1)². Returns the back curve whose
+// overshoot over a move of `travel` px is `px` px.
+function backWithin(travel, px) {
+  const peak = (k) => (4 * k ** 3) / (27 * (k + 1) ** 2);
+  const target = px / Math.max(1, travel);
+  let lo = 0;
+  let hi = 4;
+  for (let i = 0; i < 30; i++) {
+    const k = (lo + hi) / 2;
+    if (peak(k) > target) hi = k;
+    else lo = k;
+  }
+  return easeOutBack(lo);
+}
 
 class Node {
   constructor(parent, el, w, h, z) {
@@ -82,7 +97,7 @@ class Coin extends Node {
 
   // After a flip, the face showing becomes the front and the turn resets.
   settle() {
-    if (this.ry > 90) {
+    if (Math.abs(this.ry) > 90) {
       [this.front, this.back] = [this.back, this.front];
       this.back.innerHTML = '';
       this.back.style.transform = '';
@@ -94,7 +109,7 @@ class Coin extends Node {
   apply() {
     super.apply();
     const rad = (this.ry * Math.PI) / 180;
-    const showBack = this.ry > 90;
+    const showBack = Math.abs(this.ry) > 90;
     this.front.style.display = showBack ? 'none' : '';
     this.back.style.display = showBack ? '' : 'none';
     (showBack ? this.back : this.front).style.transform = Math.cos(rad) < 0 ? 'scaleX(-1)' : '';
@@ -199,11 +214,12 @@ export class Director {
     this.env().header?.removeAttribute('style');
   }
 
-  animatePie(from, to, duration, ease) {
-    const pie = this.env().header?.querySelector('[data-progress-pie]');
-    if (!pie || from === to) return Promise.resolve();
-    const { cx, cy, r } = pie.dataset;
-    return this.seq.tween(duration, (e) => pie.setAttribute('d', piePath(+cx, +cy, +r, lerp(from, to, e))), ease);
+  // Fills the header's progress ring for the current world.
+  animateProgress(from, to, duration, ease) {
+    const ring = this.env().header?.querySelector('[data-progress-ring]');
+    if (!ring || from === to) return Promise.resolve();
+    const r = +ring.dataset.r;
+    return this.seq.tween(duration, (e) => ring.setAttribute('stroke-dasharray', ringDash(r, lerp(from, to, e))), ease);
   }
 
   cancel() {
@@ -259,21 +275,26 @@ export class Director {
     this.drop(rays);
   }
 
-  // A blank canvas rises from below the screen to its place, overshooting a little.
+  // A blank canvas rises from below the screen to its place, overshooting a
+  // little. Once it has landed, the tray rises in after it.
   async canvasEnter(g, face) {
-    const { delay, duration, ease } = T.canvasEnter;
+    const { delay, duration, overshoot } = T.canvasEnter;
     const from = g.H + g.D / 2 + 40;
+    const ease = backWithin(from - g.canvasY, overshoot * g.k);
     const canvas = this.coin(g.D, 6).faces(face).set({ x: g.cx, y: from });
     await this.seq.wait(delay);
     await this.seq.tween(duration, (e) => canvas.set({ y: lerp(from, g.canvasY, e) }), ease);
+    const t = T.trayIn;
+    await this.seq.wait(t.delay);
+    await this.seq.tween(t.duration, (e) => this.chrome({ tray: e, trayY: (1 - e) * t.rise * g.k }), t.ease);
     return canvas;
   }
 
-  // Header and tray come back (the tray rising into place) partway into a flip.
-  async chromeIn(g, flipDuration) {
-    const { startFraction, duration, ease, traySlide } = T.chromeIn;
+  // The header comes back partway into a flip.
+  async headerIn(flipDuration) {
+    const { startFraction, duration, ease } = T.headerIn;
     await this.seq.wait(flipDuration * startFraction);
-    await this.seq.tween(duration, (e) => this.chrome({ header: e, tray: e, trayY: (1 - e) * traySlide * g.k }), ease);
+    await this.seq.tween(duration, (e) => this.chrome({ header: e }), ease);
   }
 
   // The new puzzle is in place: the stage takes over again and Done fades in.
@@ -313,11 +334,8 @@ export class Director {
         tween(T.flip.duration, (e) => board.set({ ry: 180 * e }), T.flip.ease),
         tween(T.flip.duration, (e) => board.set({ y: lerp(g.targetY, g2.targetY, e) }), T.flipScaleBack.ease),
         tween(T.flipScaleBack.duration, (e) => board.set({ s: lerp(T.shrink.scale, sEnd, e) }), T.flipScaleBack.ease),
-        this.animatePie(progress.from, progress.to, T.flip.duration * T.progressFill.fraction, T.progressFill.ease),
+        this.animateProgress(progress.from, progress.to, T.flip.duration * T.progressFill.fraction, T.progressFill.ease),
         this.canvasEnter(g2, canvasFace({ ...to, D: g2.D, shape })).then((c) => (canvas = c)),
-        this.seq.after(T.canvasEnter.delay, () =>
-          tween(T.trayIn.duration, (e) => this.chrome({ tray: e }), T.trayIn.ease),
-        ),
       ]);
       release();
       await this.finishInGame(board, canvas);
@@ -346,7 +364,7 @@ export class Director {
           (e) => this.chrome({ header: 1 - e, tray: 0, done: 0 }),
           tr.ease,
         ),
-        this.animatePie(progress.from, 1, tr.duration * T.progressFill.fraction, T.progressFill.ease),
+        this.animateProgress(progress.from, 1, tr.duration * T.progressFill.fraction, T.progressFill.ease),
       ]);
       this.hideParts(...STAGE_PARTS);
       release();
@@ -456,7 +474,7 @@ export class Director {
       await Promise.all([
         tween(rf.duration, (e) => num.set({ ry: 180 * e }), rf.flipEase),
         tween(rf.duration, (e) => num.set({ y: lerp(badgeY, g2.targetY, e) }), rf.moveEase),
-        this.chromeIn(g2, rf.duration),
+        this.headerIn(rf.duration),
         this.canvasEnter(g2, canvasFace({ ...to, D: g2.D, shape })).then((c) => (canvas = c)),
       ]);
       await this.finishInGame(num, canvas);
@@ -505,7 +523,7 @@ export class Director {
       await Promise.all([
         tween(mo.canvasDrop.duration, (e) => canvas.set({ y: lerp(g.canvasY, dropTo, e) }), mo.canvasDrop.ease),
         tween(mo.chromeOut, (e) => this.chrome({ header: 1 - e, tray: 1 - e, trayY: T.worldTravel.traySlide * g.k * e, done: 1 - e })),
-        tween(mo.flip.duration, (e) => board.set({ ry: 180 * e }), mo.flip.flipEase),
+        tween(mo.flip.duration, (e) => board.set({ ry: 180 * mo.flip.direction * e }), mo.flip.flipEase),
         tween(
           mo.flip.duration,
           (e) => board.set({ y: lerp(g.targetY, menuY, e), s: lerp(1, ms, e) }),
@@ -665,7 +683,7 @@ export class Director {
         ),
         tween(rf.duration, (e) => board.set({ ry: 180 * e }), rf.flipEase),
         tween(rf.duration, (e) => board.set({ x: lerp(x0, g2.cx, e), y: lerp(m.menuY, g2.targetY, e), s: lerp(s0, 1, e) }), rf.moveEase),
-        this.chromeIn(g2, rf.duration),
+        this.headerIn(rf.duration),
         this.canvasEnter(g2, canvasFace({ ...to, D: g2.D, shape })).then((c) => (canvas = c)),
       ]);
       this.drop(...m.coins, m.title, m.label);

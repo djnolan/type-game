@@ -20,8 +20,8 @@ const outDir = path.join(root, 'src/data/glyphs');
 const instanceDir = path.join(root, 'fonts/.instances');
 const python = process.env.PYTHON || 'python3';
 
-// A–Z, a–z, 0–9 (each font's default numeral style) and the asterisk badge.
-const CHARS = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', ...'abcdefghijklmnopqrstuvwxyz', ...'0123456789', '*'];
+// A–Z, a–z and 0–9 (each font's default numeral style).
+const CHARS = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', ...'abcdefghijklmnopqrstuvwxyz', ...'0123456789'];
 const DECIMALS = 1;
 
 const round = (n) => Math.round(n * 10 ** DECIMALS) / 10 ** DECIMALS;

@@ -1,35 +1,19 @@
 const R = 6.5;
 const STEP = 16;
+// The current world's progress ring: a thick arc just inside the outline.
+const RING_WIDTH = 2.6;
+const RING_R = R + 0.6 - RING_WIDTH / 2;
 
-// Path for a dot filled clockwise from 12 o'clock by `fraction` (0–1). Also
-// used by the level-complete transition to animate the fill.
-export function piePath(cx, cy, r, fraction) {
-  if (fraction <= 0) return '';
-  if (fraction >= 1) return `M${cx} ${cy - r}A${r} ${r} 0 1 1 ${cx} ${cy + r}A${r} ${r} 0 1 1 ${cx} ${cy - r}Z`;
-  const a = fraction * 2 * Math.PI;
-  const x = cx + r * Math.sin(a);
-  const y = cy - r * Math.cos(a);
-  const large = fraction > 0.5 ? 1 : 0;
-  return `M${cx} ${cy}V${cy - r}A${r} ${r} 0 ${large} 1 ${x} ${y}Z`;
+// stroke-dasharray for a ring filled clockwise from 12 o'clock by `fraction`
+// (0–1). Also used by the level-complete transition to animate the fill.
+export function ringDash(r, fraction) {
+  const c = 2 * Math.PI * r;
+  return `${Math.max(0, Math.min(1, fraction)) * c} ${c}`;
 }
 
-// The world's badge: its typeface's own asterisk, knocked out of a filled dot.
-function Badge({ cx, cy, glyphs }) {
-  const g = glyphs.glyphs['*'];
-  const [x1, y1, x2, y2] = g.bbox;
-  const s = (R * 1.35) / Math.max(x2 - x1, y2 - y1);
-  const ox = cx - ((x1 + x2) / 2) * s;
-  const oy = cy - ((y1 + y2) / 2) * s;
-  return (
-    <>
-      <circle cx={cx} cy={cy} r={R} className="fill-fg" />
-      <path d={g.d} transform={`translate(${ox} ${oy}) scale(${s})`} className="fill-bg" />
-    </>
-  );
-}
-
-// One dot per world: completed worlds show their asterisk badge, the current
-// world fills like a pie as levels are completed, future worlds are empty.
+// One dot per world: completed worlds are filled, the current world has an
+// accent dot with a ring that fills like a donut chart as its levels are
+// completed, and future worlds are empty.
 export default function ProgressIndicator({ worlds }) {
   const width = STEP * (worlds.length - 1) + 2 * R + 2;
   const label = worlds.map((w) => `World ${w.world}: ${w.state}`).join(', ');
@@ -38,13 +22,26 @@ export default function ProgressIndicator({ worlds }) {
       {worlds.map((w, i) => {
         const cx = R + 1 + i * STEP;
         const cy = R + 1;
-        if (w.state === 'complete') return <Badge key={w.world} cx={cx} cy={cy} glyphs={w.glyphs} />;
+        if (w.state === 'complete') return <circle key={w.world} cx={cx} cy={cy} r={R + 0.6} className="fill-fg" />;
         return (
           <g key={w.world}>
-            {w.state === 'current' && (
-              <path d={piePath(cx, cy, R, w.fraction)} className="fill-fg" data-progress-pie="" data-cx={cx} data-cy={cy} data-r={R} />
-            )}
             <circle cx={cx} cy={cy} r={R} className="fill-none stroke-outline" style={{ strokeWidth: 1.2 }} />
+            {w.state === 'current' && (
+              <>
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={RING_R}
+                  transform={`rotate(-90 ${cx} ${cy})`}
+                  className="fill-none"
+                  style={{ stroke: 'var(--fg)', strokeWidth: RING_WIDTH }}
+                  strokeDasharray={ringDash(RING_R, w.fraction)}
+                  data-progress-ring=""
+                  data-r={RING_R}
+                />
+                <circle cx={cx} cy={cy} r={1.8} className="fill-accent" />
+              </>
+            )}
           </g>
         );
       })}

@@ -56,10 +56,12 @@ export const transitions = {
   flipScaleBack: { duration: 320, ease: easeInOutCubic },
   // The header's progress dot fills during the flip.
   progressFill: { fraction: 0.8, ease: easeInOutCubic },
-  // A blank canvas rises from below the screen, starting this long after the flip.
-  canvasEnter: { delay: 260, duration: 620, ease: easeOutBack(1.4) },
-  // Tray and Done come back once the new puzzle is in place.
-  trayIn: { duration: 320, ease: easeOutCubic },
+  // A blank canvas rises from below the screen, starting this long after the
+  // flip. It eases out with a back curve whose overshoot is capped at
+  // `overshoot` px, so it never rides up into the target above it.
+  canvasEnter: { delay: 260, duration: 620, overshoot: 6 },
+  // The tray rises in once the canvas has landed, then Done fades in.
+  trayIn: { delay: 80, duration: 360, rise: 40, ease: easeOutCubic },
   doneIn: { duration: 200, ease: easeOutCubic },
 
   // World complete
@@ -77,7 +79,8 @@ export const transitions = {
   swipeIn: { duration: 560, overlap: 160, ease: easeOutBack(1.3) },
   numberHold: 280,
   riseFlip: { duration: 850, flipEase: easeInOutBack(1.25), moveEase: easeInOutCubic },
-  chromeIn: { duration: 320, startFraction: 0.45, ease: easeOutCubic, traySlide: 40 },
+  // The header fades back in partway into the flip (the tray follows the canvas).
+  headerIn: { duration: 320, startFraction: 0.45, ease: easeOutCubic },
 
   // World menu
   menu: {
@@ -90,7 +93,8 @@ export const transitions = {
   menuOut: {
     canvasDrop: { duration: 380, ease: easeInCubic },
     chromeOut: 250,
-    flip: { duration: 800, flipEase: easeInOutBack(1.25), moveEase: easeInOutCubic },
+    // Turns the opposite way to the flip that comes back into a world.
+    flip: { duration: 800, flipEase: easeInOutBack(1.25), moveEase: easeInOutCubic, direction: -1 },
     neighbours: { startFraction: 0.45, duration: 600, distance: 150, ease: easeOutCubic, labelRise: 10 },
   },
   menuSelect: { duration: 380, distance: 150, ease: easeInCubic },
