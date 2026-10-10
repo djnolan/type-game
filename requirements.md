@@ -36,7 +36,7 @@ Top to bottom:
 2. **Target circle.** The puzzle: letters cropped by the circle, merged into one solid shape. Shown in reverse (background-colored letters knocked out of a solid circle) so the player's letters fill the spaces when dragged up to check.
 3. **Canvas circle.** Same size as the target, with a dot grid in the background. The player builds their answer here.
 4. **Done button.** A small circular button with an accent-colored dot, beside the canvas.
-5. **Letter tray.** A full A–Z row of large letters, cropped at the bottom of the screen, with a tick-mark track under it.
+5. **Letter tray.** A full A–Z row of large letters, cropped at the bottom of the screen. The letters sit on a single baseline rule, with tick marks below it (the scroll track, drawn with only its top edge).
 
 ### Progress indicator
 - One dot per world (5 worlds).

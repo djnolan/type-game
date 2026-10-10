@@ -473,8 +473,8 @@ export default function Stage({
         key={x}
         x1={sx}
         x2={sx}
-        y1={L.tray.trackTop + 5}
-        y2={L.tray.trackBottom - 5}
+        y1={L.tray.trackTop + 8}
+        y2={L.tray.trackBottom - 8}
         stroke="var(--grid)"
         strokeWidth={1}
       />,
@@ -585,16 +585,17 @@ export default function Stage({
       {/* Tray */}
       <g data-part="tray">
         <g className={`fades ${checking ? 'hidden' : ''}`}>
-          <rect
-            x={TRAY_PAD - scroll}
-            y={L.tray.trackTop}
-            width={trayWidth - 2 * TRAY_PAD}
-            height={L.tray.trackH}
-            rx={10}
-            className="fill-bg stroke-outline"
+          {/* The track: just a line along its top edge (the letters' baseline). */}
+          <rect x={TRAY_PAD - scroll} y={L.tray.trackTop} width={trayWidth - 2 * TRAY_PAD} height={L.tray.trackH} className="fill-bg" />
+          <line
+            x1={TRAY_PAD - scroll}
+            x2={trayWidth - TRAY_PAD - scroll}
+            y1={L.tray.trackTop}
+            y2={L.tray.trackTop}
+            className="stroke-outline"
           />
           {ticks}
-          {/* Letters sit on the track's top edge, with descenders in front of it. */}
+          {/* Letters sit on the line, with descenders in front of the track. */}
           {slots.map((slot) => {
             const x = slot.x0 - scroll;
             if (inPlay(slot.char) || x > width || x + slot.w < 0) return null;
