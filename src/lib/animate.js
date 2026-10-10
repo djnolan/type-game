@@ -1,8 +1,6 @@
-const easings = {
-  linear: (t) => t,
-  easeOut: (t) => 1 - (1 - t) ** 3,
-  easeInOut: (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2),
-};
+import { easeInOutCubic, easeOutCubic, linear } from './easing';
+
+const easings = { linear, easeOut: easeOutCubic, easeInOut: easeInOutCubic };
 
 // Animates a flat object of numbers from `from` to `to`.
 // Returns a handle; stop() halts it and returns the current value, so a new
@@ -36,7 +34,7 @@ export function animate(from, to, config, onUpdate, onDone) {
     } else {
       const { duration = 200, easing = 'easeOut' } = config;
       const p = Math.min(1, (now - start) / duration);
-      const e = easings[easing](p);
+      const e = (typeof easing === 'function' ? easing : easings[easing])(p);
       for (const k of keys) cur[k] = from[k] + (to[k] - from[k]) * e;
       done = p >= 1;
     }

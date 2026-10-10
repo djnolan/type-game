@@ -23,8 +23,7 @@ This first build is a **web prototype for iterating on core gameplay**. It may b
 
 **Out of scope for now** (needed later)
 - Title, world select, level select, badge collection, settings, and tutorial screens
-- End-of-level and end-of-world screens and transitions
-- Polished motion language (keep motion functional for now; see Motion)
+- Polished motion language beyond the transitions in `MOTION-SPEC.md` (see Motion)
 - Sound and haptics
 - Scaling, rotating, or flipping letters
 - Timers and scoring
@@ -145,6 +144,7 @@ A smooth, playful motion language will matter a lot in the finished game, but it
 For now:
 - Keep motion simple and functional: drag follows the finger, letters snap, and the canvas snaps onto the target.
 - Keep any motion values in one place, and use a structure that can take spring-based, interruptible motion later.
+- Level complete, wrong answer, world complete, continue to the next world, and the world menu follow `MOTION-SPEC.md` (prototype: `motion-lab.html`).
 
 ## Technical notes
 
@@ -157,7 +157,7 @@ For now:
 - What does the player see on a failed check — just a retry, or a hint about what's off?
 - Is the drop zone the right size? A drop counts as on the canvas by where the finger is, not where the letter is, which keeps removal predictable even when letters are huge. A letter dropped with the finger just below the canvas goes back to the tray even if it's visibly over the canvas. If that trips players up, let the zone reach a bit further below the canvas (`dropBottom` in `src/lib/geometry.js`).
 - Should a failed check reset all the letters back to the tray, as a penalty? Depends on how hard the levels turn out. For now, letters are kept.
-- End-of-level and end-of-world screens and transitions
+- Final badge art, world complete heading styling and the world number circle design
 - Final color palette and accent
 - Motion language and references
 - Sound and haptics

@@ -10,6 +10,8 @@
   --muted: color-mix(in srgb, var(--fg) 52%, var(--bg));
   /* Canvas dot grid, fainter than --grid (which the tray track ticks use). */
   --grid-dot: color-mix(in srgb, var(--fg) 11%, var(--bg));
+  /* Darkens a circle as it turns edge-on during a coin flip. */
+  --shade: var(--fg);
 
   --outline-width: 1.5px;
   --ui-font: 'DM Sans', system-ui, sans-serif;
@@ -20,6 +22,7 @@
   :root:not([data-theme='light']) {
     --bg: #1a1916;
     --fg: #e8e2d5;
+    --shade: #0b0a09;
     color-scheme: dark;
   }
 }
@@ -27,6 +30,7 @@
 :root[data-theme='dark'] {
   --bg: #1a1916;
   --fg: #e8e2d5;
+  --shade: #0b0a09;
   color-scheme: dark;
 }
 
@@ -256,5 +260,93 @@ button {
 .overlay-note {
   margin: 0;
   font-size: 12px;
+  color: var(--muted);
+}
+
+/* Screen transitions and the world menu (lib/director.js). The layer lets
+   input through to the game until a transition or the menu is on screen. */
+.motion-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  pointer-events: none;
+  touch-action: none;
+  outline: none;
+}
+
+.motion-layer[data-active] {
+  pointer-events: auto;
+}
+
+.ml-node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+
+.coin {
+  perspective: 700px;
+}
+
+.coin-spin,
+.coin-face {
+  position: absolute;
+  inset: 0;
+}
+
+.coin-face svg {
+  display: block;
+}
+
+.coin-shade {
+  position: absolute;
+  inset: 2%;
+  border-radius: 50%;
+  background: var(--shade);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Placeholder styles for the world complete screen and world menu. */
+.ml-heading {
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.ml-continue {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 0;
+}
+
+.ml-title {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.ml-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.ml-label-name {
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.ml-label-sub {
+  font-size: 13px;
   color: var(--muted);
 }

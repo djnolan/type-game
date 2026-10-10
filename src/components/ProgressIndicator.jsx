@@ -1,14 +1,16 @@
 const R = 6.5;
 const STEP = 16;
 
-function pie(cx, cy, r, fraction) {
-  if (fraction <= 0) return null;
-  if (fraction >= 1) return <circle cx={cx} cy={cy} r={r} className="fill-fg" />;
+// Path for a dot filled clockwise from 12 o'clock by `fraction` (0–1). Also
+// used by the level-complete transition to animate the fill.
+export function piePath(cx, cy, r, fraction) {
+  if (fraction <= 0) return '';
+  if (fraction >= 1) return `M${cx} ${cy - r}A${r} ${r} 0 1 1 ${cx} ${cy + r}A${r} ${r} 0 1 1 ${cx} ${cy - r}Z`;
   const a = fraction * 2 * Math.PI;
   const x = cx + r * Math.sin(a);
   const y = cy - r * Math.cos(a);
   const large = fraction > 0.5 ? 1 : 0;
-  return <path d={`M${cx} ${cy}V${cy - r}A${r} ${r} 0 ${large} 1 ${x} ${y}Z`} className="fill-fg" />;
+  return `M${cx} ${cy}V${cy - r}A${r} ${r} 0 ${large} 1 ${x} ${y}Z`;
 }
 
 // The world's badge: its typeface's own asterisk, knocked out of a filled dot.
@@ -39,7 +41,9 @@ export default function ProgressIndicator({ worlds }) {
         if (w.state === 'complete') return <Badge key={w.world} cx={cx} cy={cy} glyphs={w.glyphs} />;
         return (
           <g key={w.world}>
-            {w.state === 'current' && pie(cx, cy, R, w.fraction)}
+            {w.state === 'current' && (
+              <path d={piePath(cx, cy, R, w.fraction)} className="fill-fg" data-progress-pie="" data-cx={cx} data-cy={cy} data-r={R} />
+            )}
             <circle cx={cx} cy={cy} r={R} className="fill-none stroke-outline" style={{ strokeWidth: 1.2 }} />
           </g>
         );
