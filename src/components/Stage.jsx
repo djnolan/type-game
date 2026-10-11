@@ -12,6 +12,7 @@ import {
 } from '../lib/geometry';
 import { tray as trayConfig } from '../layout';
 import { XIcon } from './Icons';
+import { REWARDED_CHECKS, markLayout } from '../lib/marks';
 import { gestures, motion } from '../motion';
 
 const TRAY_PAD = trayConfig.sidePadding;
@@ -23,6 +24,9 @@ const TICK_STEP = trayConfig.tickStep;
 // other circle up to the inner edge of its stroke, so when the circles line up
 // both outlines show at full width.
 const OUTLINE_HALF = 0.75;
+
+// Longer side, in px, of the mark Done shows in place of its dot.
+const DONE_MARK = 12;
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -47,6 +51,16 @@ function Glyph({ glyph, ox, oy, s, ...rest }) {
   return <path d={glyph.d} transform={`translate(${ox} ${oy}) scale(${s})`} {...rest} />;
 }
 
+// The mark the next check would earn, in Done's dot spot.
+function DoneMark({ mark, cx, cy }) {
+  const { char, x, y, fontSize } = markLayout(mark, cx, cy, DONE_MARK);
+  return (
+    <text x={x} y={y} className="fill-accent" style={{ font: `500 ${fontSize}px var(--ui-font)` }}>
+      {char}
+    </text>
+  );
+}
+
 // The gameplay surface: target circle, canvas circle, Done button and letter
 // tray, drawn in one SVG in CSS px so dragging between them is one coordinate space.
 //
@@ -55,6 +69,8 @@ function Glyph({ glyph, ox, oy, s, ...rest }) {
 // A pass hands over to the level-complete transition (lib/director.js), which
 // finds the target, canvas, Done and tray by their data-part wrappers.
 // A fail shakes both circles "no", then the canvas returns.
+// `checks` counts this level's checks so far; onCheck() reports a new one as the
+// canvas lands on the target. Done shows the mark the next check would earn.
 export default function Stage({
   width,
   height,
@@ -68,6 +84,8 @@ export default function Stage({
   solution,
   checkable = true,
   shape = 'circle',
+  checks = 0,
+  onCheck,
   onPass,
 }) {
   const uid = useId().replace(/:/g, '');
@@ -300,6 +318,7 @@ export default function Stage({
       return;
     }
     setPhase('judging');
+    onCheck?.();
     moveCanvas({ x: 0, y: dy }, motion.canvasSnap, () => {
       if (matchesSolution(lettersRef.current, solution)) {
         setPhase('pass');
@@ -605,7 +624,11 @@ export default function Stage({
             aria-label="Done"
           >
             <circle cx={L.done.cx} cy={L.done.cy} r={L.done.r} className="fill-bg stroke-outline" />
-            <circle cx={L.done.cx} cy={L.done.cy} r={4} className="fill-accent" />
+            {checks < REWARDED_CHECKS ? (
+              <DoneMark mark={checks + 1} cx={L.done.cx} cy={L.done.cy} />
+            ) : (
+              <circle cx={L.done.cx} cy={L.done.cy} r={4} className="fill-accent" />
+            )}
           </g>
         </g>
       )}

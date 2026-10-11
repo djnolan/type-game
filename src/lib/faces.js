@@ -1,4 +1,6 @@
 import { insideShape, letterOrigin, puzzleScale } from './geometry';
+import { isPerfect, markSvg } from './marks';
+import { transitions as T } from '../motion';
 
 // SVG markup for the circles the transition layer flips and moves around
 // (lib/director.js). Each face is drawn D px across, to match the gameplay
@@ -41,11 +43,24 @@ export function targetFace({ world, level, D, shape }) {
   );
 }
 
-// A correct match: the player's accent letters fill the target's knockouts. The shimmer band (hidden off to the left until
-// animated) is clipped to the letter shapes.
-export function solvedFace({ world, level, D, shape }) {
+// A correct match: the player's accent letters fill the target's knockouts.
+// Solved with a mark, it also holds an accent fill (radius 0 until animated)
+// and the mark on top, scaled to 0 until it pops in. Solved with no mark, it
+// holds a shimmer band (off to the left until animated), clipped to the letters.
+export function solvedFace({ world, level, mark, D, shape }) {
   const id = `f${++uid}`;
   const letters = letterPaths(world, level, D);
+  const r = D / 2;
+  if (mark) {
+    return svg(
+      D,
+      `<defs><clipPath id="${id}">${board(D, shape)}</clipPath></defs>` +
+        board(D, shape, 'class="fill-fg"') +
+        `<g clip-path="url(#${id})" class="fill-accent">${letters}<circle data-fill cx="${r}" cy="${r}" r="0"/></g>` +
+        `<g data-mark transform="translate(${r} ${r}) scale(0)">${markSvg(mark, 0, 0, D * T.markPop.size, 'var(--bg)')}</g>` +
+        board(D, shape, 'class="fill-none stroke-outline"'),
+    );
+  }
   return svg(
     D,
     `<defs><clipPath id="${id}">${board(D, shape)}</clipPath><clipPath id="${id}l">${letters}</clipPath>` +
@@ -82,13 +97,24 @@ export function canvasFace({ world, level, letters = [], D, shape }) {
 }
 
 // A completed world's badge. Placeholder until the custom ampersand art per
-// world is ready: a UI-font ampersand knocked out of a solid circle.
-export function badgeFace({ D }) {
+// world is ready: a UI-font ampersand knocked out of a solid circle. `marks`
+// are the best run's marks (lib/marks.js), set small around the edge in level
+// order from the top, clockwise, with an empty spot for a level with no mark.
+// A run of all * gets the accent badge.
+export function badgeFace({ D, marks = [] }) {
   const r = D / 2;
+  const n = marks.length;
+  const ring = marks
+    .map((m, i) => {
+      const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+      return markSvg(m, r + Math.cos(a) * r * 0.76, r + Math.sin(a) * r * 0.76, D * 0.075, 'var(--bg)');
+    })
+    .join('');
   return svg(
     D,
-    board(D, 'circle', 'class="fill-fg"') +
-      `<text x="${r}" y="${r}" text-anchor="middle" dominant-baseline="central" style="font:500 ${Math.round(D * 0.46)}px var(--ui-font);fill:var(--bg)">&amp;</text>`,
+    board(D, 'circle', `class="${isPerfect(marks) ? 'fill-accent' : 'fill-fg'}"`) +
+      `<text x="${r}" y="${r}" text-anchor="middle" dominant-baseline="central" style="font:500 ${Math.round(D * 0.46)}px var(--ui-font);fill:var(--bg)">&amp;</text>` +
+      ring,
   );
 }
 

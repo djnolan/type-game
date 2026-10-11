@@ -1,8 +1,8 @@
 # Motion & Screens Spec
 
-This adds transitions and three screens to the existing, working game. It does **not** change gameplay, levels, letter dragging, the answer check, or how the canvas is dragged onto the target. Hook into the game's existing events (correct match, wrong match, last level of a world, and so on) and leave the underlying logic alone.
+This adds transitions and three screens to the existing, working game, plus the success feedback for level marks (see Scoring in `requirements.md`). It does **not** change gameplay, levels, letter dragging, the answer check, or how the canvas is dragged onto the target. Hook into the game's existing events (correct match, wrong match, last level of a world, and so on) and leave the underlying logic alone.
 
-**Reference:** `motion-lab.html` is a working prototype of every sequence below. Open it in a browser to see the intended feel, and read its source for the exact sequencing. The `T` object at the top of its script holds all the tuned values. Use it as a reference, not code to paste in.
+**Reference:** `motion-lab.html` is a working prototype of every sequence below, except the marked success feedback (accent fill and mark), which it predates. Open it in a browser to see the intended feel, and read its source for the exact sequencing. The `T` object at the top of its script holds all the tuned values. Use it as a reference, not code to paste in.
 
 ---
 
@@ -32,15 +32,20 @@ A new blank canvas (empty grid) rises from below the screen to its normal positi
 
 **Trigger:** a correct match, after the canvas has snapped onto the target. At this point the two circles act as one.
 
-1. Show the combined circle in its solved state: the matched letters in the accent color, with an accent border. Hide the separate canvas.
+1. Show the combined circle in its solved state: the matched letters in the accent color. Hide the separate canvas.
 2. Scale down to 0.94: 200ms, `easeOutCubic`.
-3. Success feedback. Build both versions behind a config switch so I can choose:
-   - **Rays:** 12 short accent-colored strokes shoot outward from just outside the circle. The head of each stroke leads and the tail catches up until it disappears. 480ms. Stroke width 3.5, rounded ends, travel distance about 46px.
-   - **Shimmer:** a soft, light diagonal band sweeps across the accent letters only, clipped to the letter shapes. 560ms, `easeInOutCubic`.
-4. Hold for 120ms.
-5. Coin flip 180° to the next level's target: 700ms. Scale back from 0.94 to 1 during the first 320ms, so the scale change is hidden inside the flip.
-6. Canvas enter, starting 260ms after the flip starts.
-7. If the header has a level progress indicator, animate its fill during the flip.
+3. Success feedback, depending on the level's mark (`*`, `†` or `‡` for solving on check 1, 2 or 3; none after that):
+   - **Solved with a mark:**
+     1. Hold the solved letters so they can be seen clearly: 400ms after the scale down.
+     2. **Rays** fire: 12 short foreground strokes shoot outward from just outside the circle. The head of each stroke leads and the tail catches up until it disappears. 400ms. Stroke width 1.5, travel distance about 34px, starting 8px out from the circle.
+     3. At the same moment, the whole solved circle **fills with the accent color**, growing outward from the center and covering the letters completely: 300ms, `easeOutCubic`.
+     4. Also at the same moment, the **mark pops in** at the center, on top of the fill, scaling from 0 with a slight overshoot: 300ms, `easeOutBack(1.4)`. It's set in DM Sans (a UI element, not the world typeface) in the background color, with its longer side about 35% of the circle's diameter.
+     5. Hold the filled circle with its mark for 500ms.
+   - **Solved with no mark:** a **shimmer**, a soft, light diagonal band, sweeps across the accent letters only, clipped to the letter shapes: 560ms, `easeInOutCubic`. No rays, no fill and no mark. Then hold for 120ms.
+   - Every timing here lives in the motion config (`solvedHold`, `rays`, `fill`, `markPop`, `holdAfterMark`, `shimmer`, `holdAfterFeedback`).
+4. Coin flip 180° to the next level's target, from the circle as the feedback left it (filled with its mark, or showing the letters): 700ms. Scale back from 0.94 to 1 during the first 320ms, so the scale change is hidden inside the flip.
+5. Canvas enter, starting 260ms after the flip starts.
+6. If the header has a level progress indicator, animate its fill during the flip.
 
 ## 2. Wrong answer
 
@@ -54,15 +59,15 @@ A new blank canvas (empty grid) rises from below the screen to its normal positi
 
 **Trigger:** a correct match on the last level of a world.
 
-1–4. Same as level complete: solved state, scale down, feedback, hold.
+1–3. Same as level complete: solved state, scale down, and the success feedback for the level's mark, including its hold. A marked last level travels down still filled with its mark.
 
-5. **Travel down** to the vertical center of the screen, scaling back to 1: 620ms, `easeInOutCubic`. At the same time, the header and letter tray fade out, and the tray slides down 40px, over the first 70% of that time.
-6. **Lift and 360° flip** to the world badge. The flip takes 1000ms with `easeInOutBack`. At the same time, the circle rises 28px with `easeInOutCubic`.
-7. **Dip, then the ribbon pops out.** The badge drops 14px (150ms, `easeInCubic`), then springs back up (350ms, `easeOutBack(2)`). As it springs back, the ribbon drops out from behind it (440ms, `easeOutBack(1.8)`).
+4. **Travel down** to the vertical center of the screen, scaling back to 1: 620ms, `easeInOutCubic`. At the same time, the header and letter tray fade out, and the tray slides down 40px, over the first 70% of that time.
+5. **Lift and 360° flip** to the world badge. The flip takes 1000ms with `easeInOutBack`. At the same time, the circle rises 28px with `easeInOutCubic`.
+6. **Dip, then the ribbon pops out.** The badge drops 14px (150ms, `easeInCubic`), then springs back up (350ms, `easeOutBack(2)`). As it springs back, the ribbon drops out from behind it (440ms, `easeOutBack(1.8)`).
    - **Ribbon (placeholder):** a vertical strip in the accent color with a V-notched bottom end, showing only the world number. It sits behind the badge. It starts fully hidden and ends hanging below the badge, with its top about 30px tucked behind the badge.
-8. The heading "World N complete" (placeholder style) fades in while rising 12px: 320ms, `easeOutCubic`, starting 40% of the way into the ribbon pop. The **Continue** button does the same, 240ms after the heading.
+7. The heading "World N complete" (placeholder style) fades in while rising 12px: 320ms, `easeOutCubic`, starting 40% of the way into the ribbon pop. The **Continue** button does the same, 240ms after the heading.
 
-**Badge:** use a solid circle as a placeholder. The final art comes later.
+**Badge:** placeholder until the final art: a solid circle with a UI-font ampersand, showing the world's best run (see Rewards in `requirements.md`). Its marks sit small around the edge in level order, with an empty spot for a level with no mark. A best run of all * gets the accent version. On a replay that didn't beat the best run, the badge shows the existing best.
 
 ## 4. Continue to the next world
 
@@ -84,7 +89,7 @@ A new blank canvas (empty grid) rises from below the screen to its normal positi
 - A label under the centered circle with the world number, style name and status. The text is a placeholder.
 
 ### Circle states
-- **Complete:** shows the world badge. Can be selected.
+- **Complete:** shows the world badge, with its best run's marks. Can be selected, which starts a full replay from level 1 (or carries on, if one of its levels is on screen).
 - **Current/next:** shows the world number. Can be selected.
 - **Future:** shows the world number in a muted color with a dashed outline. Can't be selected.
 

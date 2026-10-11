@@ -1,3 +1,14 @@
+/* Level marks † and ‡, which the Fontsource DM Sans files lack (see
+   src/lib/marks.js). Declared after them, so it wins for these two characters. */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/dm-sans-marks-500.woff2') format('woff2');
+  unicode-range: U+2020-2021;
+}
+
 /* Color tokens: warm paper and ink. Tweak here. Dark mode has its own
    bg/fg values; grid, outline and muted are mixed from them, so they follow
    along. Never pure black or white. */
