@@ -23,8 +23,7 @@ This first build is a **web prototype for iterating on core gameplay**. It may b
 
 **Out of scope for now** (needed later)
 - Title, world select, level select, badge collection, settings, and tutorial screens
-- End-of-level and end-of-world screens and transitions
-- Polished motion language (keep motion functional for now; see Motion)
+- Polished motion language beyond the transitions in `MOTION-SPEC.md` (see Motion)
 - Sound and haptics
 - Scaling, rotating, or flipping letters
 - Timers and scoring
@@ -37,12 +36,12 @@ Top to bottom:
 2. **Target circle.** The puzzle: letters cropped by the circle, merged into one solid shape. Shown in reverse (background-colored letters knocked out of a solid circle) so the player's letters fill the spaces when dragged up to check.
 3. **Canvas circle.** Same size as the target, with a dot grid in the background. The player builds their answer here.
 4. **Done button.** A small circular button with an accent-colored dot, beside the canvas.
-5. **Letter tray.** A full A–Z row of large letters, cropped at the bottom of the screen, with a tick-mark track under it.
+5. **Letter tray.** A full A–Z row of large letters, cropped at the bottom of the screen. The letters sit on a single baseline rule, with tick marks below it (the scroll track, drawn with only its top edge).
 
 ### Progress indicator
 - One dot per world (5 worlds).
-- A completed world shows its asterisk badge.
-- The current world's dot fills like a circular progress bar as its levels are completed.
+- A completed world is a filled dot.
+- The current world has a small foreground-colored dot in its centre, and a thicker ring that fills like a donut chart as its levels are completed.
 - Future worlds are empty circles.
 
 ## Core interactions
@@ -66,7 +65,7 @@ Top to bottom:
 1. Player taps **Done**.
 2. The UI clears away, leaving the canvas circle draggable. A cancel (×) button takes Done's place; tapping it returns to building.
 3. The player's letters switch to the **accent color** so they read against the target.
-4. The player drags the canvas circle up onto the target. The drag is vertical only, and stops when the canvas's top edge reaches the target's. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
+4. The player drags the canvas circle up onto the target. The drag is vertical only, and stops when the canvas's top edge reaches the target's. Reaching the target checks the answer right away, even before the player lets go. Near alignment on release, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
 5. **Pass:** the match must be perfect. Because the target always sits on the world's grid, a perfect match is always possible.
 6. **Fail:** unlimited retries. The canvas returns, with the player's letters kept, so they can adjust.
 
@@ -113,15 +112,15 @@ The game should never load font files for the game pieces. Only the UI font load
 
 **Why:** the world typefaces may be purchased fonts, and their licenses may not cover bundling the font files in a web app or native app. Shipping only the outlines of the glyphs the game uses avoids distributing the fonts themselves.
 
-- Convert each world's typeface to SVG path data ahead of time (e.g. a build script using opentype.js). Output one glyph data file per world containing A–Z, the asterisk, and the metrics needed for positioning. Include only the glyphs the game uses.
+- Convert each world's typeface to SVG path data ahead of time (e.g. a build script using opentype.js). Output one glyph data file per world containing the characters the game uses (A–Z, a–z, 0–9) and the metrics needed for positioning. Include only the glyphs the game uses.
 - **Source font files never ship.** Keep them in a local folder that is gitignored and outside anything the build bundles or serves. Only the generated path data is committed and shipped.
 - The game renders letters from that path data only.
 - All five world typefaces go through this same pipeline. Variable fonts are first pinned to a static instance (fontTools' instancer), since opentype.js handles variable fonts poorly. Adding or swapping a font means dropping it in the local folder, editing the world config and rerunning the script.
 
 ## Rewards
 
-- Completing a world earns an **asterisk badge, drawn from that world's typeface's own asterisk glyph**.
-- In the prototype, the badge only needs to appear in the progress indicator.
+- Completing a world earns a **badge: a custom-designed ampersand per world**. Until the art is ready, the badge is a placeholder (a UI-font ampersand knocked out of a solid circle, `badgeFace` in `src/lib/faces.js`).
+- The badge appears on the world complete screen and in the world menu.
 
 ## Visual design
 
@@ -145,6 +144,7 @@ A smooth, playful motion language will matter a lot in the finished game, but it
 For now:
 - Keep motion simple and functional: drag follows the finger, letters snap, and the canvas snaps onto the target.
 - Keep any motion values in one place, and use a structure that can take spring-based, interruptible motion later.
+- Level complete, wrong answer, world complete, continue to the next world, and the world menu follow `MOTION-SPEC.md` (prototype: `motion-lab.html`).
 
 ## Technical notes
 
@@ -157,7 +157,7 @@ For now:
 - What does the player see on a failed check — just a retry, or a hint about what's off?
 - Is the drop zone the right size? A drop counts as on the canvas by where the finger is, not where the letter is, which keeps removal predictable even when letters are huge. A letter dropped with the finger just below the canvas goes back to the tray even if it's visibly over the canvas. If that trips players up, let the zone reach a bit further below the canvas (`dropBottom` in `src/lib/geometry.js`).
 - Should a failed check reset all the letters back to the tray, as a penalty? Depends on how hard the levels turn out. For now, letters are kept.
-- End-of-level and end-of-world screens and transitions
+- Final badge art, world complete heading styling and the world number circle design
 - Final color palette and accent
 - Motion language and references
 - Sound and haptics

@@ -88,9 +88,7 @@ export function matchesSolution(letters, solution) {
 // so the tray can fit the tallest ascender.
 export function glyphExtent(glyphs) {
   let above = 1;
-  for (const [char, g] of Object.entries(glyphs.glyphs)) {
-    if (char !== '*') above = Math.max(above, -g.bbox[1] / glyphs.capHeight);
-  }
+  for (const g of Object.values(glyphs.glyphs)) above = Math.max(above, -g.bbox[1] / glyphs.capHeight);
   return { above };
 }
 

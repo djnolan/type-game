@@ -1,4 +1,3 @@
-import Asterisk from './Asterisk';
 import { worlds } from '../lib/data';
 
 // Placeholder world select, opened from the progress indicator. Jump to any
@@ -22,7 +21,9 @@ export default function WorldSelect({ completed, currentId, onPick, onStartOver,
           return (
             <li key={w.world}>
               <button className="world-row" disabled={!first} onClick={() => onPick(first.id)}>
-                <Asterisk glyphs={w.glyphs} size={28} className="fill-fg" />
+                <span className="world-dot" data-done={done === w.levels.length && done > 0 ? '' : undefined}>
+                  {w.world}
+                </span>
                 <span className="world-name">
                   World {w.world} · {w.name}
                   <span className="world-meta">

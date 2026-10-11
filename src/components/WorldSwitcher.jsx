@@ -1,8 +1,7 @@
-import Asterisk from './Asterisk';
 import { worlds } from '../lib/data';
 
-// Dev-only: one button per world, labeled with its number and its typeface's
-// asterisk, plus a line naming the selected world's typeface and grid.
+// Dev-only: one button per world, labeled with its number, plus a line naming
+// the selected world's typeface and grid.
 export default function WorldSwitcher({ value, onChange, note }) {
   const current = worlds.find((w) => w.world === value);
   return (
@@ -17,7 +16,6 @@ export default function WorldSwitcher({ value, onChange, note }) {
             onClick={() => onChange(w.world)}
           >
             {w.world}
-            <Asterisk glyphs={w.glyphs} size={14} />
           </button>
         ))}
       </div>

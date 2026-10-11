@@ -5,7 +5,7 @@ Everything in this folder except this README is gitignored. It sits outside
 
 Each world's font file is set by `typeface.source` in `src/data/worlds.json`.
 `npm run glyphs` reads it, writes a static instance to `fonts/.instances/`
-and then writes `src/data/glyphs/world-<n>.json`, which holds the A–Z and `*`
+and then writes `src/data/glyphs/world-<n>.json`, which holds the A–Z, a–z and 0–9
 outlines plus metrics. Only that JSON ships.
 
 The script needs Python 3 with fontTools (`pip install fonttools brotli`;

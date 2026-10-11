@@ -24,6 +24,10 @@ npm run build      # production build in dist/ (no level editor)
 The dev-only routes exist under `npm run dev`. For a build that includes them,
 use `VITE_ENABLE_EDITOR=true npm run build`.
 
+The back arrow opens the world menu: swipe through the worlds and tap the
+centred one to play it. Completed worlds and the current one can be entered;
+later worlds are locked.
+
 Tap the progress dots (top right) to open the placeholder world select. Jump
 to any world or level from there, or tap "Start over from world 1" to clear all
 saved progress. Skipping ahead doesn't mark the levels in between as completed,
@@ -88,7 +92,7 @@ npm run glyphs -- 4   # one world
 This needs Python 3 with fontTools (`pip install fonttools brotli`). Variable
 fonts are pinned at the configured axis values with fontTools' instancer, then
 opentype.js converts the static instance to `src/data/glyphs/world-<n>.json`
-(A–Z, a–z, 0–9, `*` and metrics). Figures use each font's default numeral
+(A–Z, a–z, 0–9 and metrics). Figures use each font's default numeral
 style, so Zilla Slab's are oldstyle.. Only those files are committed and shipped.
 
 `grid` is read by the app directly, so changing it needs no rebuild. Levels
@@ -104,10 +108,18 @@ original positions. Use Play test to try the draft in the gameplay screen.
 ## Where things live
 
 - `src/styles.css`: color tokens for light and dark mode.
-- `src/motion.js`: every motion and gesture value.
+- `src/motion.js`: every motion and gesture value, including every timing,
+  distance and easing of the screen transitions (`transitions`). Switch the
+  success feedback between `'rays'` and `'shimmer'` there.
 - `src/layout.js`: tray letter size, spacing and position.
 - `src/lib/charsets.js`: the character sets a level's tray can offer.
 - `src/lib/animate.js`: tween and spring animation that can be interrupted.
+- `src/lib/director.js`: the screen transitions (level complete, world
+  complete, next world) and the world menu, played in a layer over the game
+  with stand-in circles drawn by `src/lib/faces.js`. See `MOTION-SPEC.md`.
+- `src/lib/easing.js`, `src/lib/sequence.js`: easing curves, and the
+  promise-based tweens the transitions are scripted with.
 - `src/lib/geometry.js`: grid, layout and answer-check math.
-- `src/components/Stage.jsx`: the gameplay surface (target, canvas, tray, dragging, checking).
+- `src/components/Stage.jsx`: the gameplay surface (target, canvas, tray,
+  dragging, checking, and the wrong-answer shake).
 - `src/screens/Game.jsx`, `src/screens/Editor.jsx`: the two screens.

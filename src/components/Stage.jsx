@@ -19,6 +19,11 @@ const TRAY_GAP = trayConfig.letterGap;
 const TRAY_INSET = trayConfig.trackInset;
 const TICK_STEP = trayConfig.tickStep;
 
+// Half of --outline-width (styles.css). Each outline is hidden inside the
+// other circle up to the inner edge of its stroke, so when the circles line up
+// both outlines show at full width.
+const OUTLINE_HALF = 0.75;
+
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -47,6 +52,9 @@ function Glyph({ glyph, ox, oy, s, ...rest }) {
 //
 // Phases: build → check (canvas draggable; cancel returns to build)
 //         → judging (snapped onto target) → pass | fail (fail returns to build).
+// A pass hands over to the level-complete transition (lib/director.js), which
+// finds the target, canvas, Done and tray by their data-part wrappers.
+// A fail shakes both circles "no", then the canvas returns.
 export default function Stage({
   width,
   height,
@@ -61,7 +69,6 @@ export default function Stage({
   checkable = true,
   shape = 'circle',
   onPass,
-  onContinue,
 }) {
   const uid = useId().replace(/:/g, '');
   const svgRef = useRef(null);
@@ -76,6 +83,7 @@ export default function Stage({
   const [ghost, setGhostState] = useState(null); // { char, ox, oy, s, out }
   const [scrollX, setScrollX] = useState(0);
   const [offset, setOffsetState] = useState({ x: 0, y: 0 });
+  const [shake, setShake] = useState(0);
 
   // Refs mirror state that pointer handlers read, so they never see a stale render.
   const ghostRef = useRef(null);
@@ -298,11 +306,29 @@ export default function Stage({
         onPass?.();
       } else {
         setPhase('fail');
-        timers.current.push(
-          setTimeout(() => moveCanvas({ x: 0, y: 0 }, motion.canvasReturn, () => setPhase('build')), motion.failHold),
-        );
+        timers.current.push(setTimeout(shakeNo, motion.failPause));
       }
     });
+  }
+
+  // Both circles shake together like a head saying no: a sine wave that dies
+  // away. Then the canvas returns, keeping the player's letters.
+  function shakeNo() {
+    const { duration, amplitude, cycles } = motion.failShake;
+    const amp = (amplitude * width) / 390;
+    canvasAnim.current = animate(
+      { t: 0 },
+      { t: 1 },
+      { type: 'tween', duration, easing: 'linear' },
+      ({ t }) => setShake(Math.sin(t * Math.PI * 2 * cycles) * amp * (1 - t)),
+      () => {
+        canvasAnim.current = null;
+        setShake(0);
+        timers.current.push(
+          setTimeout(() => moveCanvas({ x: 0, y: 0 }, motion.failReturn, () => setPhase('build')), motion.failShakeHold),
+        );
+      },
+    );
   }
 
   // ---- Pointer routing ------------------------------------------------------
@@ -311,10 +337,6 @@ export default function Stage({
     if (gesture.current) return;
     const p = local(e);
 
-    if (phase === 'pass') {
-      onContinue?.();
-      return;
-    }
     if (phase === 'check') {
       if (e.target.closest?.('[data-action="cancel"]')) {
         cancelCheck();
@@ -378,7 +400,14 @@ export default function Stage({
     } else if (g.type === 'canvas') {
       // Straight up and down only: the target is directly above. It can't go
       // past the target, so its top edge stops at the target's top edge.
-      setOffset({ x: 0, y: Math.max(L.target.cy - L.canvas.cy, g.startOffset.y + dy) });
+      // Reaching it checks the answer straight away, without waiting for the drop.
+      const top = L.target.cy - L.canvas.cy;
+      setOffset({ x: 0, y: Math.max(top, g.startOffset.y + dy) });
+      if (g.startOffset.y + dy <= top) {
+        gesture.current = null;
+        svgRef.current.releasePointerCapture?.(e.pointerId);
+        releaseCanvas();
+      }
     }
   }
 
@@ -456,8 +485,8 @@ export default function Stage({
         key={x}
         x1={sx}
         x2={sx}
-        y1={L.tray.trackTop + 5}
-        y2={L.tray.trackBottom - 5}
+        y1={L.tray.trackTop + 8}
+        y2={L.tray.trackBottom - 8}
         stroke="var(--grid)"
         strokeWidth={1}
       />,
@@ -465,8 +494,7 @@ export default function Stage({
   }
 
   let caption = null;
-  if (phase === 'pass') caption = 'Solved. Tap to continue.';
-  else if (phase === 'fail') caption = 'Not quite.';
+  if (phase === 'fail') caption = 'Not quite.';
   else if (phase === 'check') caption = 'Drag the canvas onto the target.';
 
   return (
@@ -492,53 +520,93 @@ export default function Stage({
         <clipPath id={`zone-${uid}`}>
           <rect x={zone.left} y={zone.top} width={zone.right - zone.left} height={zone.bottom - zone.top} />
         </clipPath>
+        {/* Everywhere except inside the other circle, for the outlines. */}
+        <mask id={`off-target-${uid}`} maskUnits="userSpaceOnUse" x={-width} y={-height} width={3 * width} height={3 * height}>
+          <rect x={-width} y={-height} width={3 * width} height={3 * height} fill="white" />
+          <Board c={{ ...L.target, cx: L.target.cx + shake, r: L.target.r - OUTLINE_HALF }} shape={shape} fill="black" />
+        </mask>
+        <mask id={`off-canvas-${uid}`} maskUnits="userSpaceOnUse" x={-width} y={-height} width={3 * width} height={3 * height}>
+          <rect x={-width} y={-height} width={3 * width} height={3 * height} fill="white" />
+          <Board
+            c={{ cx: L.canvas.cx + offset.x + shake, cy: L.canvas.cy + offset.y, r: L.canvas.r - OUTLINE_HALF }}
+            shape={shape}
+            fill="black"
+          />
+        </mask>
       </defs>
+
+      {/* The canvas is drawn in two layers around the target: its fill and dot
+          grid below, its letters above. Both outlines go on top of all the
+          letters, each hidden inside the other circle, so while the canvas is
+          dragged up neither outline crosses letters, and no letter covers an
+          outline. */}
+      <g data-part="canvas">
+        <g transform={`translate(${offset.x + shake} ${offset.y})`}>
+          <Board
+            c={L.canvas}
+            shape={shape}
+            className={building ? 'fill-bg' : 'fill-none'}
+            style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
+          />
+          <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
+        </g>
+      </g>
 
       {/* Target: the negative. Letters are knocked out of a solid circle, so the
           player's accent letters fill those spaces exactly when the canvas lands on it. */}
-      <Board c={L.target} shape={shape} className="fill-fg" />
-      <g clipPath={`url(#target-${uid})`}>{renderLetters(target, L.targetBox, 'fill-bg', false)}</g>
-      <Board c={L.target} shape={shape} className="fill-none stroke-outline" />
+      <g data-part="target">
+        <g transform={shake ? `translate(${shake} 0)` : undefined}>
+          <Board c={L.target} shape={shape} className="fill-fg" />
+          <g clipPath={`url(#target-${uid})`}>{renderLetters(target, L.targetBox, 'fill-bg', false)}</g>
+        </g>
+      </g>
 
       {caption && (
         // Below the canvas's home spot, where the tray was.
-        <text x={L.canvas.cx} y={Math.min(L.canvas.cy + L.D / 2 + 36, height - 24)} textAnchor="middle" className="stage-caption">
-          {caption}
-        </text>
+        <g data-part="caption">
+          <text x={L.canvas.cx} y={Math.min(L.canvas.cy + L.D / 2 + 36, height - 24)} textAnchor="middle" className="stage-caption">
+            {caption}
+          </text>
+        </g>
       )}
 
-      {/* Canvas */}
-      <g transform={`translate(${offset.x} ${offset.y})`}>
-        <Board
-          c={L.canvas}
-          shape={shape}
-          className={building ? 'fill-bg' : 'fill-none'}
-          style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
-        />
-        <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
-        {/* Invisible, uncropped copies of placed letters, so a letter that's
-            mostly outside the circle can still be picked up by its hidden
-            part. Kept within the drop zone so they never cover the tray. */}
-        {building && (
-          <g clipPath={`url(#zone-${uid})`} fill="transparent">
-            {renderLetters(letters, L.canvasBox, undefined, true)}
+      <g data-part="canvas">
+        <g transform={`translate(${offset.x + shake} ${offset.y})`}>
+          {/* Invisible, uncropped copies of placed letters, so a letter that's
+              mostly outside the circle can still be picked up by its hidden
+              part. Kept within the drop zone so they never cover the tray. */}
+          {building && (
+            <g clipPath={`url(#zone-${uid})`} fill="transparent">
+              {renderLetters(letters, L.canvasBox, undefined, true)}
+            </g>
+          )}
+          <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
+        </g>
+        <g mask={`url(#off-target-${uid})`}>
+          <g transform={`translate(${offset.x + shake} ${offset.y})`}>
+            <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
           </g>
-        )}
-        <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
-        <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
+        </g>
+      </g>
+      <g data-part="target" mask={`url(#off-canvas-${uid})`}>
+        <g transform={shake ? `translate(${shake} 0)` : undefined}>
+          <Board c={L.target} shape={shape} className="fill-none stroke-outline" />
+        </g>
       </g>
 
       {/* Done */}
       {checkable && (
-        <g
-          data-action="done"
-          className={`fades ${checking ? 'hidden' : ''}`}
-          style={{ cursor: 'pointer', opacity: letters.length || checking ? undefined : 0.35 }}
-          role="button"
-          aria-label="Done"
-        >
-          <circle cx={L.done.cx} cy={L.done.cy} r={L.done.r} className="fill-bg stroke-outline" />
-          <circle cx={L.done.cx} cy={L.done.cy} r={4} className="fill-accent" />
+        <g data-part="done">
+          <g
+            data-action="done"
+            className={`fades ${checking ? 'hidden' : ''}`}
+            style={{ cursor: 'pointer', opacity: letters.length || checking ? undefined : 0.35 }}
+            role="button"
+            aria-label="Done"
+          >
+            <circle cx={L.done.cx} cy={L.done.cy} r={L.done.r} className="fill-bg stroke-outline" />
+            <circle cx={L.done.cx} cy={L.done.cy} r={4} className="fill-accent" />
+          </g>
         </g>
       )}
 
@@ -557,24 +625,27 @@ export default function Stage({
       )}
 
       {/* Tray */}
-      <g className={`fades ${checking ? 'hidden' : ''}`}>
-        <rect
-          x={TRAY_PAD - scroll}
-          y={L.tray.trackTop}
-          width={trayWidth - 2 * TRAY_PAD}
-          height={L.tray.trackH}
-          rx={10}
-          className="fill-bg stroke-outline"
-        />
-        {ticks}
-        {/* Letters sit on the track's top edge, with descenders in front of it. */}
-        {slots.map((slot) => {
-          const x = slot.x0 - scroll;
-          if (inPlay(slot.char) || x > width || x + slot.w < 0) return null;
-          return (
-            <Glyph key={slot.char} glyph={glyphs.glyphs[slot.char]} ox={slot.ox - scroll} oy={L.tray.baseline} s={sT} className="fill-fg" />
-          );
-        })}
+      <g data-part="tray">
+        <g className={`fades ${checking ? 'hidden' : ''}`}>
+          {/* The track: just a line along its top edge (the letters' baseline). */}
+          <rect x={TRAY_PAD - scroll} y={L.tray.trackTop} width={trayWidth - 2 * TRAY_PAD} height={L.tray.trackH} className="fill-bg" />
+          <line
+            x1={TRAY_PAD - scroll}
+            x2={trayWidth - TRAY_PAD - scroll}
+            y1={L.tray.trackTop}
+            y2={L.tray.trackTop}
+            className="stroke-outline"
+          />
+          {ticks}
+          {/* Letters sit on the line, with descenders in front of the track. */}
+          {slots.map((slot) => {
+            const x = slot.x0 - scroll;
+            if (inPlay(slot.char) || x > width || x + slot.w < 0) return null;
+            return (
+              <Glyph key={slot.char} glyph={glyphs.glyphs[slot.char]} ox={slot.ox - scroll} oy={L.tray.baseline} s={sT} className="fill-fg" />
+            );
+          })}
+        </g>
       </g>
 
       {/* The letter being dragged, on top of everything. Cropped by the canvas

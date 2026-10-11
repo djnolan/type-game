@@ -1,0 +1,529 @@
+<title>Counterform Motion Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<style>
+/* Layout: a phone-sized game screen on the left that plays each transition; scene list and tuning rail on the right. */
+:root {
+  --bg: #EFEADF; --fg: #1D1B18; --accent: #E4502A; --on-accent: #FBF7EF;
+  --muted: rgba(29,27,24,.58); --line: rgba(29,27,24,.16); --dot-opacity: .12; --shade: #1D1B18;
+  --ui: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1A1916; --fg: #E8E2D5; --muted: rgba(232,226,213,.56); --line: rgba(232,226,213,.16); --dot-opacity: .09; --shade: #000; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #1A1916; --fg: #E8E2D5; --muted: rgba(232,226,213,.56); --line: rgba(232,226,213,.16); --dot-opacity: .09; --shade: #000; color-scheme: dark; }
+
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--ui); font-size: 15px; padding-inline: 16px; padding-block: 0; }
+.wrap { max-width: 1060px; margin: 0 auto; display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 40px; padding-block: 24px; }
+@media (max-width: 800px) { .wrap { grid-template-columns: minmax(0,1fr); gap: 24px; } }
+
+/* phone */
+.phone-col { min-width: 0; display: flex; justify-content: center; align-items: flex-start; }
+.phone-box { position: relative; }
+.phone { position: absolute; left: 0; top: 0; width: 390px; height: 780px; transform-origin: 0 0; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 40px; background: var(--bg); touch-action: none; user-select: none; -webkit-user-select: none; }
+.n { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+.coin .spin { width: 100%; height: 100%; position: relative; }
+.coin .face, .coin .face svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.coin .shade { position: absolute; inset: 2%; border-radius: 50%; background: var(--shade); opacity: 0; pointer-events: none; }
+.hdr { width: 390px; height: 80px; }
+.back { position: absolute; left: 12px; top: 24px; width: 40px; height: 40px; border: 0; background: transparent; color: var(--fg); cursor: pointer; display: grid; place-items: center; border-radius: 50%; }
+.back:focus-visible, .cont:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dots { position: absolute; right: 18px; top: 34px; }
+.done { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--fg); display: grid; place-items: center; }
+.done::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.tray { width: 390px; height: 104px; overflow: hidden; }
+.tray-letters { position: absolute; left: 20px; top: 2px; font-size: 86px; font-weight: 700; line-height: 1; letter-spacing: 8px; white-space: nowrap; }
+.tray-track { position: absolute; left: 14px; right: 14px; bottom: 12px; height: 28px; border: 1.5px solid var(--fg); border-radius: 999px;
+  background-color: var(--bg); background-image: repeating-linear-gradient(90deg, transparent 0 29px, var(--line) 29px 30px); }
+.ribbon svg { display: block; }
+.heading { width: 390px; text-align: center; font-size: 28px; font-weight: 700; letter-spacing: -.01em; }
+.cont { width: 200px; height: 52px; border-radius: 999px; border: 1.5px solid var(--fg); background: transparent; color: var(--fg); font: inherit; font-size: 16px; font-weight: 500; cursor: pointer; }
+.mtitle { width: 390px; height: 80px; }
+.mtitle span { position: absolute; left: 26px; top: 32px; font-size: 18px; font-weight: 700; }
+.mlabel { width: 390px; text-align: center; display: flex; flex-direction: column; gap: 4px; }
+.mlabel b { font-size: 17px; }
+.mlabel span { font-size: 13.5px; color: var(--muted); }
+.mhint { width: 390px; text-align: center; font-size: 13px; color: var(--muted); }
+
+/* rail */
+.rail { display: flex; flex-direction: column; gap: 22px; border-left: 1px solid var(--line); padding-left: 32px; min-width: 0; }
+@media (max-width: 800px) { .rail { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 22px; } }
+h1 { font-size: 15px; margin: 0; }
+.lede { margin: 6px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+.scenes { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.scene { display: grid; grid-template-columns: 22px 1fr; gap: 2px 10px; text-align: left; font: inherit; color: var(--fg); background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 11px 4px; cursor: pointer; }
+.scene i { font-style: normal; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 2px; grid-row: span 2; }
+.scene b { font-weight: 700; font-size: 14.5px; }
+.scene span { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.scene:hover b, .scene[aria-current="true"] b { color: var(--accent); }
+.scene:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.seg { display: flex; border: 1px solid var(--fg); border-radius: 999px; overflow: hidden; }
+.seg button { flex: 1; font: inherit; font-size: 13px; padding: 7px 6px; background: transparent; color: var(--fg); border: 0; border-left: 1px solid var(--fg); cursor: pointer; white-space: nowrap; }
+.seg button:first-child { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.seg button:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { font: inherit; font-size: 14px; font-weight: 700; padding: 10px 16px; border-radius: 999px; border: 0; cursor: pointer; }
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--fg); font-weight: 500; }
+.note { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin: 0; }
+</style>
+
+<div class="wrap">
+  <div class="phone-col" id="phoneCol"><div class="phone-box" id="phoneBox"><div class="phone" id="phone"></div></div></div>
+
+  <aside class="rail" aria-label="Controls">
+    <div><h1>Motion lab</h1><p class="lede">Each scene plays from its own starting point. You can also drag the bottom circle onto the top one yourself, tap the back arrow, or swipe the world menu.</p></div>
+    <div class="field"><span class="label">Scenes</span>
+      <div class="scenes" id="scenes">
+        <button type="button" class="scene" data-s="level"><i>1</i><b>Level complete</b><span>Match, feedback, coin flip to the next puzzle, new canvas enters</span></button>
+        <button type="button" class="scene" data-s="fail"><i>2</i><b>Wrong answer</b><span>Shake no, then the canvas returns</span></button>
+        <button type="button" class="scene" data-s="world"><i>3</i><b>World complete</b><span>Last level: travel down, 360 flip to the badge, ribbon pops out</span></button>
+        <button type="button" class="scene" data-s="next"><i>4</i><b>Continue to next world</b><span>Badge swipes out, world number in, flip up to the first level</span></button>
+        <button type="button" class="scene" data-s="menu"><i>5</i><b>World menu</b><span>Back to the carousel, then tap a world to flip up into it</span></button>
+      </div></div>
+    <div class="field"><span class="label">Success feedback</span>
+      <div class="seg" data-key="fb"><button type="button" id="fb-rays" data-v="rays" aria-pressed="true">Rays</button><button type="button" id="fb-shim" data-v="shimmer">Shimmer</button></div></div>
+    <div class="field"><span class="label">Your drag result</span>
+      <div class="seg" data-key="ans"><button type="button" id="an-ok" data-v="correct" aria-pressed="true">Correct</button><button type="button" id="an-no" data-v="wrong">Wrong</button></div></div>
+    <div class="field"><span class="label">Speed</span>
+      <div class="seg" data-key="speed"><button type="button" id="sp-1" data-v="1" aria-pressed="true">1×</button><button type="button" id="sp-2" data-v="2">½×</button><button type="button" id="sp-5" data-v="5">⅕×</button></div></div>
+    <div class="field"><span class="label">Theme</span>
+      <div class="seg" data-key="theme"><button type="button" id="th-a" data-v="auto" aria-pressed="true">Auto</button><button type="button" id="th-l" data-v="light">Light</button><button type="button" id="th-d" data-v="dark">Dark</button></div></div>
+    <div class="row"><button type="button" class="btn primary" id="replay">Replay scene</button><button type="button" class="btn ghost" id="copy">Copy timings</button></div>
+    <p class="note" id="copyNote">Copy timings puts every duration, delay and distance used here on your clipboard as JSON, ready to paste into Claude Code. The badge and world number are placeholders.</p>
+  </aside>
+</div>
+
+<script>
+const DATA = {"glyphs":{"archivo:a":{"d":"M270 -12Q219 -12 175.0 -5.0Q131 2 98.5 19.5Q66 37 48.0 67.5Q30 98 30 146Q30 209 63.5 245.5Q97 282 159.0 299.5Q221 317 306.5 322.0Q392 327 497 327V338Q497 365 483.0 381.5Q469 398 443.5 405.5Q418 413 383 413Q362 413 336.0 409.5Q310 406 291.0 396.5Q272 387 272 368V364H44Q43 368 43.0 370.5Q43 373 43 377Q43 424 82.5 461.0Q122 498 200.0 519.0Q278 540 392 540Q497 540 570.5 522.5Q644 505 682.5 467.0Q721 429 721 365V168Q721 152 729.0 140.5Q737 129 753 129H808V8Q790 1 755.5 -5.5Q721 -12 683 -12Q629 -12 595.0 -2.5Q561 7 543.0 23.0Q525 39 517 58H509Q480 37 444.5 21.0Q409 5 366.0 -3.5Q323 -12 270 -12ZM337 114Q352 114 378.0 117.5Q404 121 431.5 130.0Q459 139 478.0 154.0Q497 169 497 193V226Q410 226 355.5 217.5Q301 209 276.0 194.0Q251 179 251 158Q251 139 263.5 129.5Q276 120 296.0 117.0Q316 114 337 114Z","upm":1000},"archivo:T":{"d":"M315 0V499H23V688H854V499H562V0Z","upm":1000},"archivo:R":{"d":"M74 0V688H670Q747 688 798.5 656.0Q850 624 876.0 572.0Q902 520 902 460Q902 391 871.5 337.5Q841 284 782 252L918 0H639L535 215H321V0ZM321 386H583Q611 386 630.0 403.5Q649 421 649 452Q649 473 640.0 487.5Q631 502 616.5 509.5Q602 517 583 517H321Z","upm":1000},"archivo:e":{"d":"M415 -12Q302 -12 216.5 17.0Q131 46 83.5 107.5Q36 169 36 264Q36 357 83.0 418.5Q130 480 213.0 510.0Q296 540 405 540Q519 540 602.0 511.0Q685 482 730.0 421.0Q775 360 775 264V226H270Q272 189 289.0 164.0Q306 139 338.5 127.0Q371 115 417 115Q447 115 470.5 121.0Q494 127 510.0 137.5Q526 148 534.0 161.0Q542 174 542 188H774Q774 138 745.5 100.5Q717 63 667.5 38.0Q618 13 553.0 0.5Q488 -12 415 -12ZM271 328H535Q535 345 527.0 360.0Q519 375 503.5 387.0Q488 399 465.5 406.0Q443 413 415 413Q371 413 341.0 401.5Q311 390 293.5 370.5Q276 351 271 328Z","upm":1000},"zilla:k":{"d":"M539 0H308V97H350L272 186H205V97H246V0H16V97H76V590H11V688H205V277H280L346 353H292V451H518V353H469L372 243L500 97H539Z","upm":1000},"zilla:&":{"d":"M436 385H687V271H623Q589 194 520 127Q557 113 591 113Q625 113 655 126L682 16Q656 2 627.0 -4.0Q598 -10 570 -10Q488 -10 403 39Q362 16 318.0 3.0Q274 -10 229 -10Q158 -10 90.5 28.0Q23 66 23 152Q23 219 63.5 254.5Q104 290 152 315Q112 401 112 473Q112 543 156.5 601.5Q201 660 308 660Q390 660 440.0 621.0Q490 582 490 511Q490 444 442.0 403.0Q394 362 300 315Q356 228 439 170Q471 210 485 271H436ZM358 505Q358 519 350.0 540.5Q342 562 305 562Q261 562 251.5 531.5Q242 501 242 484Q242 433 267 377Q318 410 338.0 441.0Q358 472 358 505ZM186 253Q151 222 151 178Q151 132 184.0 115.5Q217 99 266 99Q290 99 315 102Q237 171 186 253Z","upm":1000},"zilla:Q":{"d":"M688 326Q688 194 611 102L677 34L593 -49L518 28Q445 -10 353 -10Q194 -10 109.0 89.0Q24 188 24 324Q24 466 114.0 563.0Q204 660 357 660Q513 660 600.5 561.5Q688 463 688 326ZM543 322Q543 426 495.0 484.0Q447 542 356 542Q259 542 214.0 480.5Q169 419 169 327Q169 238 213.0 173.0Q257 108 360 108Q399 108 430 119L332 220L416 303L518 198Q543 248 543 322Z","upm":1000},"zilla:S":{"d":"M526 197Q526 96 458.0 43.0Q390 -10 271 -10Q205 -10 139.5 7.0Q74 24 36 58L56 219L163 209L162 130Q196 112 220.0 108.5Q244 105 261 105Q314 105 348.0 118.5Q382 132 382 181Q382 235 342.0 253.5Q302 272 248 282Q201 290 153.5 305.5Q106 321 74.0 356.5Q42 392 42 462Q42 571 116.0 615.5Q190 660 278 660Q342 660 400.0 640.5Q458 621 489 588L495 447L388 437L379 513Q354 530 328.5 536.0Q303 542 279 542Q239 542 212.5 528.0Q186 514 186 479Q186 438 220.0 422.0Q254 406 298 396Q338 388 391.5 373.5Q445 359 485.5 319.5Q526 280 526 197Z","upm":1000},"bodoni:J":{"d":"M1248 1500V1496H1048V340Q1007 250 953.0 176.0Q899 102 828.5 49.0Q758 -4 669.0 -32.5Q580 -61 468 -61Q341 -61 238.5 -25.0Q136 11 76.0 80.5Q16 150 16 250Q16 322 49.5 377.5Q83 433 139.0 464.0Q195 495 260 495Q320 495 376.0 466.5Q432 438 467.5 386.0Q503 334 503 263Q503 195 469.0 144.5Q435 94 379.81976744186045 66.0Q324.6395348837209 38 260 38Q180 38 110.5 89.5Q41 141 23 212Q36 120 98.5 62.0Q161 4 247.5 -23.5Q334 -51 419 -51Q501.0137931034483 -51 544.0068965517241 -1.5Q587 48 603.0 144.5Q619 241 619 380V1496H359V1500Z","upm":2000},"bodoni:a":{"d":"M936 -20Q854 -20 792.5 0.5Q731 21 696.5 61.0Q662 101 662 160V609Q662 681 646.5 754.5Q631 828 588.5 877.5Q546 927 466 927Q424 927 367.5 917.0Q311 907 257.5 883.0Q204 859 169.0 817.5Q134 776 134 712H132Q132 786 193.0 834.0Q254 882 339 882Q427 882 490.0 839.5Q553 797 553 716Q553 634 489.0 588.0Q425 542 339 542Q248 542 189.0 589.0Q130 636 130 712Q130 777 165.5 820.5Q201 864 259.5 889.5Q318 915 388.0 925.5Q458 936 526 936Q694 936 809.0 898.5Q924 861 983.0 788.0Q1042 715 1042 609V92Q1042 62 1061.0 42.0Q1080 22 1116 22Q1139 22 1183.0 43.0Q1227 64 1258 126H1262Q1228 50 1140.5 15.0Q1053 -20 936 -20ZM345 -20Q215 -20 137.5 46.5Q60 113 60 227Q60 361 177.5 432.5Q295 504 508 504H755V500H645Q582 500 542.0 460.0Q502 420 483.0 365.5Q464 311 464 266Q464 221 472.5 186.5Q481 152 501.0 132.0Q521 112 553 112Q584 112 608.5 140.5Q633 169 647.5 224.5Q662 280 662 361H666Q666 237 628.0 152.0Q590 67 518.5 23.5Q447 -20 345 -20Z","upm":2000}},"puzzles":[[{"g":"archivo:R","x":-18,"y":118,"s":200},{"g":"archivo:a","x":58,"y":196,"s":230}],[{"g":"zilla:S","x":18,"y":150,"s":230},{"g":"zilla:k","x":92,"y":186,"s":220}],[{"g":"bodoni:a","x":-20,"y":190,"s":360},{"g":"bodoni:J","x":104,"y":132,"s":190}],[{"g":"archivo:T","x":34,"y":120,"s":170},{"g":"archivo:e","x":30,"y":230,"s":210}],[{"g":"zilla:Q","x":-8,"y":140,"s":240},{"g":"zilla:&","x":96,"y":214,"s":210}]]};
+const NP = DATA.puzzles.length, WORLDS = 5, LEVELS = 5;
+const WORLD_INFO = [["Oldstyle","EB Garamond"],["Didone","Bodoni Moda"],["Slab serif","Zilla Slab"],["Grotesque","Archivo"],["Geometric","Jost"]];
+
+// ---------------- timings (ms / px) ----------------
+const T = {
+  dragUp: 520, snap: 140,
+  shrink: 200, shrinkScale: 0.94,
+  rays: 480, shimmer: 560, holdAfterFeedback: 120,
+  flip: 700, flipScaleBack: 320,
+  canvasEnterDelay: 260, canvasEnter: 620, canvasRefillDelay: 900,
+  shake: 460, shakeAmp: 11, shakeCycles: 3, failReturn: 420,
+  worldTravel: 620, worldLift: 28, worldFlip360: 1000, dip: 150, dipDepth: 14, ribbonPop: 440, headingIn: 320, continueDelay: 240,
+  swipeOut: 440, swipeIn: 560, swipeOverlap: 160, numberHold: 280, riseFlip: 850,
+  menuOut: 800, menuIn: 600, menuSelectOut: 380, menuSnap: 320,
+};
+const POS = { top: 236, bottom: 540, center: 390, badge: 362, menu: 370, cx: 195, off: 960 };
+const R = 122, RM = 100, MENU_GAP = 232;
+
+// ---------------- easing ----------------
+const lin = t => t, lerp = (a, b, t) => a + (b - a) * t;
+const outC = t => 1 - Math.pow(1 - t, 3), inC = t => t * t * t;
+const ioC = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+const outBack = (k = 1.6) => t => 1 + (k + 1) * Math.pow(t - 1, 3) + k * Math.pow(t - 1, 2);
+const ioBack = t => { const c2 = 1.25 * 1.525; return t < .5 ? (Math.pow(2*t,2)*((c2+1)*2*t - c2))/2 : (Math.pow(2*t-2,2)*((c2+1)*(t*2-2)+c2)+2)/2; };
+
+// ---------------- tween engine ----------------
+let token = 0, SPEED = 1;
+const CANCEL = Symbol("cancel");
+function tween(d, fn, ease = lin) {
+  const my = token; d *= SPEED;
+  return new Promise((res, rej) => {
+    const t0 = performance.now();
+    (function f(now) {
+      if (my !== token) return rej(CANCEL);
+      const t = d ? Math.min((now - t0) / d, 1) : 1;
+      fn(ease(t), t);
+      t < 1 ? requestAnimationFrame(f) : res();
+    })(t0);
+  });
+}
+const wait = ms => tween(ms, () => {});
+const after = (ms, fn) => wait(ms).then(fn);
+
+// ---------------- faces ----------------
+let uid = 0;
+function letters(p, dx = 0) {
+  return DATA.puzzles[p].map(L => { const g = DATA.glyphs[L.g], k = L.s / g.upm;
+    return `<path d="${g.d}" transform="translate(${L.x + dx},${L.y}) scale(${k},${-k})"/>`; }).join("");
+}
+function face(s) {
+  const id = ++uid, ring = (stroke, extra = "") => `<circle cx="100" cy="100" r="96" style="fill:none;stroke:var(--${stroke})" stroke-width="1.4" vector-effect="non-scaling-stroke" ${extra}/>`;
+  const bg = `<circle cx="100" cy="100" r="96" style="fill:var(--bg)"/>`;
+  const grid = `<pattern id="p${id}" width="12.5" height="12.5" patternUnits="userSpaceOnUse" x="6.25" y="6.25"><circle cx="6.25" cy="6.25" r="1.05" style="fill:var(--fg);fill-opacity:var(--dot-opacity)"/></pattern><circle cx="100" cy="100" r="96" fill="url(#p${id})"/>`;
+  let out = `<svg viewBox="0 0 200 200" aria-hidden="true"><defs><clipPath id="c${id}"><circle cx="100" cy="100" r="96"/></clipPath></defs>`;
+  if (s.k === "badge") {
+    out += `<circle cx="100" cy="100" r="96" style="fill:var(--fg)"/><circle cx="100" cy="100" r="84" style="fill:none;stroke:var(--bg);stroke-opacity:.35" stroke-width="1"/>`;
+  } else if (s.k === "num") {
+    out += bg + `<text x="100" y="104" text-anchor="middle" dominant-baseline="middle" style="font:500 96px var(--ui);fill:var(--fg);fill-opacity:${s.locked ? .3 : 1}">${s.n}</text>`
+      + ring("fg", s.locked ? `stroke-dasharray="3 5" style="fill:none;stroke:var(--fg);stroke-opacity:.5"` : "");
+  } else if (s.k === "blank") {
+    out += bg + grid + ring("fg");
+  } else {
+    const col = s.col === "accent" ? "var(--accent)" : "var(--fg)";
+    out += (s.bg ? bg : "") + (s.grid ? grid : "") + `<g clip-path="url(#c${id})" style="fill:${col}">${letters(s.p, s.dx || 0)}</g>`;
+    if (s.shim) out += `<defs><clipPath id="l${id}">${letters(s.p)}</clipPath><linearGradient id="g${id}"><stop offset="0" style="stop-color:var(--on-accent);stop-opacity:0"/><stop offset=".5" style="stop-color:var(--on-accent);stop-opacity:.75"/><stop offset="1" style="stop-color:var(--on-accent);stop-opacity:0"/></linearGradient></defs>`
+      + `<g clip-path="url(#c${id})"><g clip-path="url(#l${id})"><rect class="shim" x="-200" y="-60" width="64" height="320" fill="url(#g${id})" transform="skewX(-20)"/></g></g>`;
+    out += ring(s.border || "fg");
+  }
+  return out + "</svg>";
+}
+const S = {
+  target: p => ({ k: "puzzle", p, col: "fg", bg: 1, border: "fg" }),
+  answer: (p, dx = 0) => ({ k: "puzzle", p, col: "fg", bg: 1, grid: 1, border: "fg", dx }),
+  drag: (p, dx = 0) => ({ k: "puzzle", p, col: "accent", bg: 0, border: "accent", dx }),
+  solved: p => ({ k: "puzzle", p, col: "accent", bg: 1, border: "accent", shim: 1 }),
+  blank: () => ({ k: "blank" }), badge: () => ({ k: "badge" }),
+  num: (n, locked = false) => ({ k: "num", n, locked }),
+};
+
+// ---------------- nodes ----------------
+const phone = document.getElementById("phone");
+class Node {
+  constructor(el, w, h, z) { this.el = el; this.w = w; this.h = h; Object.assign(this, { x: 0, y: 0, s: 1, sx: 1, sy: 1, dx: 0, o: 1 });
+    el.classList.add("n"); el.style.width = w + "px"; el.style.height = h + "px"; el.style.zIndex = z; phone.appendChild(el); }
+  apply() { const st = this.el.style;
+    st.transform = `translate(${this.x - this.w / 2 + this.dx}px,${this.y - this.h / 2}px) scale(${this.s * this.sx},${this.s * this.sy})`;
+    st.opacity = this.o; st.visibility = this.o <= .001 ? "hidden" : "visible"; st.pointerEvents = this.o < .5 ? "none" : ""; }
+  set(p) { Object.assign(this, p); this.apply(); return this; }
+}
+class Coin extends Node {
+  constructor(r, z) { const el = document.createElement("div"); el.className = "coin";
+    el.innerHTML = `<div class="spin"><div class="face"></div><div class="shade"></div></div>`;
+    super(el, r * 2, r * 2, z); el.style.perspective = "700px";
+    this.spin = el.firstChild; this.face = this.spin.firstChild; this.shade = this.spin.lastChild;
+    this.ry = 0; this.a = this.b = S.blank(); this.shown = ""; }
+  keys(a, b = a) { this.a = a; this.b = b; this.apply(); return this; }
+  settle() { this.a = this.b; this.ry = 0; this.apply(); }
+  apply() { super.apply(); const rad = this.ry * Math.PI / 180, c = Math.cos(rad);
+    const spec = this.ry > 90 ? this.b : this.a, key = JSON.stringify(spec);
+    if (key !== this.shown) { this.face.innerHTML = face(spec); this.shown = key; }
+    this.spin.style.transform = this.ry ? `rotateY(${this.ry}deg)` : "";
+    this.face.style.transform = c < 0 ? "scaleX(-1)" : "";
+    this.shade.style.opacity = (Math.abs(Math.sin(rad)) * .3).toFixed(3); }
+}
+const div = (cls, html = "") => { const d = document.createElement("div"); d.className = cls; d.innerHTML = html; return d; };
+
+// game screen
+const hdr = new Node(div("hdr", `<button type="button" class="back" id="backBtn" aria-label="World menu"><svg width="12" height="20" viewBox="0 0 12 20"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><svg class="dots" id="dots" width="96" height="16" viewBox="0 0 96 16"></svg>`), 390, 80, 9);
+const tray = new Node(div("tray", `<div class="tray-letters">abcdefghij</div><div class="tray-track"></div>`), 390, 104, 3);
+const done = new Node(div("done"), 32, 32, 6);
+const ribbon = new Node(div("ribbon", `<svg width="44" height="100" viewBox="0 0 44 100"><path d="M0 0H44V100L22 84 0 100Z" style="fill:var(--accent)"/><text id="ribbonText" x="22" y="58" text-anchor="middle" dominant-baseline="middle" style="font:700 20px var(--ui);fill:var(--on-accent)">1</text></svg>`), 44, 100, 4);
+const RIB_IN = POS.badge + R - 64, RIB_OUT = POS.badge + R + 20;  // tucked behind the badge / hanging below it
+const heading = new Node(div("heading", "World 1 complete"), 390, 40, 9);
+const cont = new Node(div("", `<button type="button" class="cont" id="contBtn">Continue</button>`), 200, 52, 9);
+const rays = new Node(document.createElementNS("http://www.w3.org/2000/svg", "svg"), 400, 400, 7);
+rays.el.setAttribute("viewBox", "-200 -200 400 400"); rays.el.style.overflow = "visible";
+rays.el.innerHTML = Array.from({ length: 12 }, () => `<line style="stroke:var(--accent)" stroke-width="3.5" stroke-linecap="round"/>`).join("");
+const board = new Coin(R, 5), alt = new Coin(R, 5), canvas = new Coin(R, 6);
+// world menu
+const mtitle = new Node(div("mtitle", "<span>Worlds</span>"), 390, 80, 9);
+const mlabel = new Node(div("mlabel", `<b id="mName"></b><span id="mSub"></span>`), 390, 60, 9);
+const mhint = new Node(div("mhint", "Swipe to browse. Tap a world to play."), 390, 20, 9);
+const mcoins = Array.from({ length: WORLDS }, () => new Coin(RM, 5));
+
+// ---------------- state ----------------
+let W = 0, L = 1, U = 0, LU = 1, mode = "game", FB = "rays", ANS = "correct", scroll = 0, arcFrac = null, lastScene = "level";
+const puzzleFor = (w, l) => (w * 2 + l) % NP;
+const menuFace = i => i < U ? S.badge() : S.num(i + 1, i > U);
+function drawDots(frac = W === U ? L / LEVELS : 0, doneUpTo = U) {
+  let s = "";
+  for (let i = 0; i < WORLDS; i++) {
+    const cx = 8 + i * 20;
+    if (i < doneUpTo) s += `<circle cx="${cx}" cy="8" r="6.5" style="fill:var(--fg)"/>`;
+    else { s += `<circle cx="${cx}" cy="8" r="6.5" style="fill:none;stroke:var(--fg)" stroke-width="1.2"/>`;
+      if (i === doneUpTo && frac > 0) { const a = frac * 2 * Math.PI - Math.PI / 2, r = 6.5, big = frac > .5 ? 1 : 0;
+        s += frac >= .999 ? `<circle cx="${cx}" cy="8" r="${r}" style="fill:var(--fg)"/>` : `<path d="M${cx} 8V${8 - r}A${r} ${r} 0 ${big} 1 ${cx + r * Math.cos(a)} ${8 + r * Math.sin(a)}Z" style="fill:var(--fg)"/>`; } }
+  }
+  document.getElementById("dots").innerHTML = s;
+}
+function hideAll(list) { list.forEach(n => n.set({ o: 0, dx: 0 })); }
+function setGame(fillCanvas = true) {
+  mode = "game";
+  hideAll([ribbon, heading, cont, rays, alt, mtitle, mlabel, mhint, ...mcoins]);
+  board.set({ x: POS.cx, y: POS.top, s: 1, o: 1, dx: 0, ry: 0 }).keys(S.target(puzzleFor(W, L)));
+  canvas.set({ x: POS.cx, y: POS.bottom, s: 1, o: 1, dx: 0, ry: 0 }).keys(fillCanvas ? S.answer(puzzleFor(W, L)) : S.blank());
+  hdr.set({ x: 195, y: 40, o: 1, dx: 0 }); tray.set({ x: 195, y: 728, o: 1 }); done.set({ x: 352, y: 440, o: 1, s: 1 });
+  drawDots();
+}
+function setWorldDone() {
+  setGame(); hideAll([hdr, tray, done, canvas]);
+  board.set({ y: POS.badge }).keys(S.badge());
+  document.getElementById("ribbonText").textContent = `${W + 1}`;
+  heading.el.textContent = `World ${W + 1} complete`;
+  ribbon.set({ x: 195, y: RIB_OUT, o: 1, s: 1 }); heading.set({ x: 195, y: 176, o: 1 }); cont.set({ x: 195, y: 650, o: 1 });
+  mode = "worldDone";
+}
+function layoutMenu(off = []) {
+  mcoins.forEach((c, i) => { const x = 195 + (i - scroll) * MENU_GAP + (off[i] || 0); c.set({ x, y: POS.menu }); });
+  const i = Math.max(0, Math.min(WORLDS - 1, Math.round(scroll)));
+  document.getElementById("mName").textContent = `World ${i + 1} · ${WORLD_INFO[i][0]}`;
+  document.getElementById("mSub").textContent = i < U ? `${WORLD_INFO[i][1]} · Complete` : i === U ? `${WORLD_INFO[i][1]} · Level ${LU + 1} of ${LEVELS}` : `${WORLD_INFO[i][1]} · Locked`;
+}
+
+// ---------------- scenes ----------------
+const easeFlip = ioBack;
+async function dragUp(correct) {
+  canvas.keys(S.drag(puzzleFor(W, L), correct ? 0 : 8));
+  await Promise.all([
+    tween(T.dragUp, e => canvas.set({ y: lerp(POS.bottom, POS.top, e) }), ioC),
+    tween(160, e => done.set({ o: 1 - e })),
+  ]);
+}
+async function feedback() {
+  board.keys(S.solved(puzzleFor(W, L))); canvas.set({ o: 0 });
+  await tween(T.shrink, e => board.set({ s: lerp(1, T.shrinkScale, e) }), outC);
+  if (FB === "rays") {
+    rays.set({ x: board.x, y: board.y, o: 1 });
+    const lines = rays.el.children, base = R * T.shrinkScale + 8;
+    await tween(T.rays, (e, t) => {
+      for (let i = 0; i < lines.length; i++) {
+        const ang = (i / lines.length) * Math.PI * 2 - Math.PI / 2 + .26;
+        const head = base + outC(t) * 46, tail = base + outC(Math.max(0, t - .28) / .72) * 46;
+        lines[i].setAttribute("x1", Math.cos(ang) * tail); lines[i].setAttribute("y1", Math.sin(ang) * tail);
+        lines[i].setAttribute("x2", Math.cos(ang) * head); lines[i].setAttribute("y2", Math.sin(ang) * head);
+      }
+    });
+    rays.set({ o: 0 });
+  } else {
+    const r = board.face.querySelector(".shim");
+    await tween(T.shimmer, e => r && r.setAttribute("x", lerp(-120, 300, e)), ioC);
+  }
+  await wait(T.holdAfterFeedback);
+}
+async function canvasEnter() {
+  canvas.set({ y: POS.off, o: 1, dx: 0 }).keys(S.blank());
+  await after(T.canvasEnterDelay, () => tween(T.canvasEnter, e => canvas.set({ y: lerp(POS.off, POS.bottom, e) }), outBack(1.4)));
+}
+async function refillCanvas() {
+  await wait(T.canvasRefillDelay);
+  canvas.keys(S.answer(puzzleFor(W, L)));
+  canvas.face.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260 });
+}
+async function levelComplete(skipDrag) {
+  if (!skipDrag) await dragUp(true);
+  await feedback();
+  const next = puzzleFor(W, L + 1);
+  board.keys(board.a, S.target(next));
+  await Promise.all([
+    tween(T.flip, e => board.set({ ry: 180 * e }), easeFlip),
+    tween(T.flipScaleBack, e => board.set({ s: lerp(T.shrinkScale, 1, e) }), ioC),
+    tween(T.flip * .8, e => W === U && drawDots((L + e) / LEVELS), ioC),
+    canvasEnter(),
+  ]);
+  board.settle(); L++; if (W === U) LU = L; drawDots(); mode = "game";
+  await tween(200, e => done.set({ o: e }));
+  await refillCanvas();
+}
+async function wrongAnswer(skipDrag) {
+  if (!skipDrag) await dragUp(false);
+  await wait(80);
+  await tween(T.shake, (e, t) => { const d = Math.sin(t * Math.PI * 2 * T.shakeCycles) * T.shakeAmp * (1 - t); canvas.set({ dx: d }); board.set({ dx: d }); });
+  board.set({ dx: 0 });
+  await wait(120);
+  const y0 = canvas.y;
+  await tween(T.failReturn, e => canvas.set({ y: lerp(y0, POS.bottom, e) }), outBack(1.2));
+  canvas.keys(S.answer(puzzleFor(W, L), 8));
+  await tween(200, e => done.set({ o: e }));
+}
+async function worldComplete(skipDrag) {
+  if (!skipDrag) await dragUp(true);
+  await feedback();
+  // travel down to centre; game chrome leaves
+  await Promise.all([
+    tween(T.worldTravel, e => board.set({ y: lerp(POS.top, POS.center, e), s: lerp(T.shrinkScale, 1, e) }), ioC),
+    tween(T.worldTravel * .7, e => { hdr.set({ o: 1 - e }); tray.set({ o: 1 - e, y: 728 + 40 * e }); }, ioC),
+    tween(T.worldTravel * .8, e => W === U && drawDots(1), lin),
+  ]);
+  // lift with a 360 flip to the badge
+  board.keys(board.a, S.badge());
+  await Promise.all([
+    tween(T.worldFlip360, e => board.set({ ry: 360 * e }), easeFlip),
+    tween(T.worldFlip360, e => board.set({ y: lerp(POS.center, POS.badge, e) }), ioC),
+  ]);
+  board.settle();
+  // dip, ribbon pops out from behind
+  document.getElementById("ribbonText").textContent = `${W + 1}`;
+  heading.el.textContent = `World ${W + 1} complete`;
+  ribbon.set({ x: 195, y: RIB_IN, o: 1, s: 1 });
+  await tween(T.dip, e => board.set({ y: POS.badge + T.dipDepth * e }), inC);
+  await Promise.all([
+    tween(T.ribbonPop * .8, e => board.set({ y: POS.badge + T.dipDepth * (1 - e) }), outBack(2)),
+    tween(T.ribbonPop, e => ribbon.set({ y: lerp(RIB_IN, RIB_OUT, e) }), outBack(1.8)),
+    after(T.ribbonPop * .4, () => tween(T.headingIn, e => heading.set({ x: 195, y: 176 + 12 * (1 - e), o: e }), outC)),
+    after(T.ribbonPop * .4 + T.continueDelay, () => tween(T.headingIn, e => cont.set({ x: 195, y: 650 + 12 * (1 - e), o: e }), outC)),
+  ]);
+  mode = "worldDone";
+}
+async function nextWorld() {
+  mode = "busy";
+  const nw = (W + 1) % WORLDS;
+  alt.set({ x: POS.cx + 420, y: POS.badge, s: 1, o: 1, ry: 0 }).keys(S.num(nw + 1));
+  await Promise.all([
+    tween(150, e => cont.set({ o: 1 - e })),
+    tween(T.swipeOut, e => { const d = -420 * e; board.set({ dx: d }); ribbon.set({ dx: d }); heading.set({ dx: d, o: 1 - e }); }, inC),
+    after(T.swipeOut - T.swipeOverlap, () => tween(T.swipeIn, e => alt.set({ x: lerp(POS.cx + 420, POS.cx, e) }), outBack(1.3))),
+  ]);
+  // hand the number circle over to the board
+  hideAll([ribbon, heading, cont, alt]);
+  if (nw === 0) { U = 0; LU = 0; }            // demo wraps after the last world
+  else if (nw > U) { U = nw; LU = 0; }
+  W = nw; L = nw === U ? LU : 0;
+  board.set({ dx: 0, x: POS.cx, y: POS.badge, ry: 0, s: 1 }).keys(S.num(nw + 1), S.target(puzzleFor(W, L)));
+  drawDots();
+  await wait(T.numberHold);
+  hdr.set({ o: 0 }); tray.set({ o: 0, y: 768 }); done.set({ o: 0 });
+  await Promise.all([
+    tween(T.riseFlip, e => board.set({ ry: 180 * e }), easeFlip),
+    tween(T.riseFlip, e => board.set({ y: lerp(POS.badge, POS.top, e) }), ioC),
+    after(T.riseFlip * .45, () => tween(320, e => { hdr.set({ o: e }); tray.set({ o: e, y: lerp(768, 728, e) }); }, outC)),
+    canvasEnter(),
+  ]);
+  board.settle(); mode = "game";
+  await tween(200, e => done.set({ o: e }));
+  await refillCanvas();
+}
+async function toMenu() {
+  mode = "busy";
+  scroll = W; const off = mcoins.map((_, i) => (i < W ? -150 : 150));
+  mcoins.forEach((c, i) => c.set({ o: 0, s: 1, ry: 0 }).keys(menuFace(i)));
+  board.keys(board.a, menuFace(W));
+  layoutMenu(off);
+  await Promise.all([
+    tween(380, e => canvas.set({ y: lerp(POS.bottom, POS.off, e) }), inC),
+    tween(250, e => { done.set({ o: 1 - e }); hdr.set({ o: 1 - e }); tray.set({ o: 1 - e, y: 728 + 40 * e }); }),
+    tween(T.menuOut, e => board.set({ ry: 180 * e }), easeFlip),
+    tween(T.menuOut, e => board.set({ y: lerp(POS.top, POS.menu, e), s: lerp(1, RM / R, e) }), ioC),
+    after(T.menuOut * .45, () => tween(T.menuIn, e => {
+      layoutMenu(off.map(o => o * (1 - e)));
+      mcoins.forEach((c, i) => i !== W && c.set({ o: e }));
+      mtitle.set({ x: 195, y: 40, o: e }); mlabel.set({ x: 195, y: 506 + 10 * (1 - e), o: e }); mhint.set({ x: 195, y: 720, o: e });
+    }, outC)),
+  ]);
+  board.settle(); mcoins[W].set({ o: 1 }); board.set({ o: 0 });
+  mode = "menu";
+}
+async function selectWorld(i) {
+  mode = "busy";
+  W = i; L = i === U ? LU : 0;
+  const target = S.target(puzzleFor(W, L));
+  board.set({ x: POS.cx, y: POS.menu, s: RM / R, o: 1, dx: 0, ry: 0 }).keys(menuFace(i), target);
+  mcoins[i].set({ o: 0 });
+  const off = mcoins.map((_, j) => (j < i ? -150 : 150));
+  hdr.set({ o: 0 }); tray.set({ o: 0, y: 768 }); done.set({ o: 0 });
+  canvas.set({ o: 0 });
+  drawDots();
+  await Promise.all([
+    tween(T.menuSelectOut, e => { mcoins.forEach((c, j) => j !== i && c.set({ dx: off[j] * e, o: 1 - e })); mtitle.set({ o: 1 - e }); mlabel.set({ o: 1 - e }); mhint.set({ o: 1 - e }); }, inC),
+    tween(T.riseFlip, e => board.set({ ry: 180 * e }), easeFlip),
+    tween(T.riseFlip, e => board.set({ y: lerp(POS.menu, POS.top, e), s: lerp(RM / R, 1, e) }), ioC),
+    after(T.riseFlip * .45, () => tween(320, e => { hdr.set({ o: e }); tray.set({ o: e, y: lerp(768, 728, e) }); }, outC)),
+    canvasEnter(),
+  ]);
+  hideAll([...mcoins, mtitle, mlabel, mhint]);
+  board.settle(); mode = "game";
+  await tween(200, e => done.set({ o: e }));
+  await refillCanvas();
+}
+
+// ---------------- runner ----------------
+function run(fn) {
+  token++; const my = token;
+  fn().catch(e => { if (e !== CANCEL) console.error(e); }).finally(() => { if (my === token && mode === "busy") mode = "game"; });
+}
+const SCENES = {
+  level: () => { if (L >= LEVELS - 1) { L = 0; if (W === U) LU = 0; } setGame(); mode = "busy"; return levelComplete(); },
+  fail: () => { setGame(); mode = "busy"; return wrongAnswer(); },
+  world: () => { L = LEVELS - 1; if (W === U) LU = L; setGame(); mode = "busy"; return worldComplete(); },
+  next: () => { setWorldDone(); return nextWorld(); },
+  menu: () => { setGame(); return toMenu(); },
+};
+function play(name) {
+  lastScene = name;
+  document.querySelectorAll(".scene").forEach(b => b.setAttribute("aria-current", b.dataset.s === name));
+  run(SCENES[name]);
+}
+document.getElementById("scenes").addEventListener("click", e => { const b = e.target.closest(".scene"); if (b) play(b.dataset.s); });
+document.getElementById("replay").addEventListener("click", () => play(lastScene));
+document.getElementById("backBtn").addEventListener("click", () => { if (mode === "game") run(toMenu); });
+document.getElementById("contBtn").addEventListener("click", () => { if (mode === "worldDone") run(nextWorld); });
+
+// ---------------- direct manipulation ----------------
+let drag = null;
+const local = e => { const r = phone.getBoundingClientRect(), k = r.width / 390; return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k }; };
+phone.addEventListener("pointerdown", e => {
+  const p = local(e);
+  if (mode === "game" && Math.hypot(p.x - canvas.x, p.y - canvas.y) < R) {
+    token++; drag = { kind: "canvas", p, x0: canvas.x, y0: canvas.y };
+    canvas.keys(S.drag(puzzleFor(W, L), ANS === "correct" ? 0 : 8)); done.set({ o: 0 });
+    phone.setPointerCapture(e.pointerId);
+  } else if (mode === "menu") {
+    drag = { kind: "menu", p, s0: scroll, moved: 0, t: performance.now(), v: 0, lastX: p.x };
+    phone.setPointerCapture(e.pointerId);
+  }
+});
+phone.addEventListener("pointermove", e => {
+  if (!drag) return; const p = local(e);
+  if (drag.kind === "canvas") canvas.set({ x: drag.x0 + p.x - drag.p.x, y: drag.y0 + p.y - drag.p.y });
+  else { const now = performance.now(); drag.v = (p.x - drag.lastX) / Math.max(1, now - drag.t); drag.t = now; drag.lastX = p.x;
+    drag.moved = Math.max(drag.moved, Math.abs(p.x - drag.p.x));
+    scroll = Math.max(-.4, Math.min(WORLDS - .6, drag.s0 - (p.x - drag.p.x) / MENU_GAP)); layoutMenu(); }
+});
+phone.addEventListener("pointerup", e => {
+  if (!drag) return; const d = drag; drag = null; const p = local(e);
+  if (d.kind === "canvas") {
+    if (Math.hypot(canvas.x - POS.cx, canvas.y - POS.top) < 56) {
+      run(async () => { mode = "busy"; const x0 = canvas.x, y0 = canvas.y;
+        await tween(T.snap, e => canvas.set({ x: lerp(x0, POS.cx, e), y: lerp(y0, POS.top, e) }), outC);
+        if (ANS === "wrong") return wrongAnswer(true);
+        return L >= LEVELS - 1 ? worldComplete(true) : levelComplete(true); });
+    } else {
+      run(async () => { mode = "busy"; const x0 = canvas.x, y0 = canvas.y;
+        await tween(380, e => canvas.set({ x: lerp(x0, POS.cx, e), y: lerp(y0, POS.bottom, e) }), outBack(1.3));
+        canvas.keys(S.answer(puzzleFor(W, L), ANS === "correct" ? 0 : 8)); done.set({ o: 1 }); mode = "game"; });
+    }
+  } else {
+    if (d.moved < 6) {
+      const i = Math.round(scroll), dxTap = p.x - 195;
+      if (Math.abs(dxTap) < RM && Math.abs(p.y - POS.menu) < RM) { if (i <= U) run(() => selectWorld(i)); return; }
+      return snapMenu(Math.max(0, Math.min(WORLDS - 1, i + Math.sign(dxTap))));
+    }
+    snapMenu(Math.max(0, Math.min(WORLDS - 1, Math.round(scroll - d.v * 180 / MENU_GAP))));
+  }
+});
+let snapId = 0;
+function snapMenu(to) {
+  const my = ++snapId, from = scroll, t0 = performance.now(), dur = T.menuSnap * SPEED;
+  (function f(now) { if (my !== snapId || mode !== "menu") return; const t = Math.min((now - t0) / dur, 1);
+    scroll = lerp(from, to, outBack(1.1)(t)); layoutMenu(); if (t < 1) requestAnimationFrame(f); })(t0);
+}
+
+// ---------------- controls ----------------
+document.querySelectorAll(".seg").forEach(seg => seg.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  const v = b.dataset.v, k = seg.dataset.key;
+  if (k === "fb") FB = v; else if (k === "ans") ANS = v; else if (k === "speed") SPEED = +v;
+  else if (k === "theme") { if (v === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", v); }
+}));
+document.getElementById("copy").addEventListener("click", async () => {
+  const txt = JSON.stringify({ easing: { flip: "easeInOutBack (overshoot 1.25)", moves: "easeInOutCubic", entrances: "easeOutBack" }, timings_ms_px: T }, null, 2);
+  const note = document.getElementById("copyNote");
+  try { await navigator.clipboard.writeText(txt); note.textContent = "Timings copied to your clipboard."; }
+  catch { note.textContent = "Copy was blocked here. Timings: " + txt; }
+});
+
+// ---------------- fit phone ----------------
+function fit() {
+  const col = document.getElementById("phoneCol"), box = document.getElementById("phoneBox");
+  const availW = col.clientWidth, availH = Math.max(420, window.innerHeight - 48);
+  const k = Math.min(availW / 390, availH / 780, 1);
+  phone.style.transform = `scale(${k})`; box.style.width = 390 * k + "px"; box.style.height = 780 * k + "px";
+}
+new ResizeObserver(fit).observe(document.getElementById("phoneCol")); window.addEventListener("resize", fit);
+fit(); setGame();
+</script>
