@@ -517,6 +517,23 @@ export default function Stage({
         </clipPath>
       </defs>
 
+      {/* Canvas, back layer: fill, dot grid and outline, below the target, so
+          while checking the outline passes under the target instead of over
+          its letters. While building, the outline is drawn again on top of the
+          letters (front layer). */}
+      <g data-part="canvas">
+        <g transform={`translate(${offset.x + shake} ${offset.y})`}>
+          <Board
+            c={L.canvas}
+            shape={shape}
+            className={building ? 'fill-bg' : 'fill-none'}
+            style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
+          />
+          <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
+          <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
+        </g>
+      </g>
+
       {/* Target: the negative. Letters are knocked out of a solid circle, so the
           player's accent letters fill those spaces exactly when the canvas lands on it. */}
       <g data-part="target">
@@ -536,16 +553,10 @@ export default function Stage({
         </g>
       )}
 
-      {/* Canvas */}
+      {/* Canvas, front layer: the letters, above the target so they show
+          over it while the canvas is dragged up to check. */}
       <g data-part="canvas">
         <g transform={`translate(${offset.x + shake} ${offset.y})`}>
-          <Board
-            c={L.canvas}
-            shape={shape}
-            className={building ? 'fill-bg' : 'fill-none'}
-            style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
-          />
-          <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
           {/* Invisible, uncropped copies of placed letters, so a letter that's
               mostly outside the circle can still be picked up by its hidden
               part. Kept within the drop zone so they never cover the tray. */}
@@ -555,7 +566,7 @@ export default function Stage({
             </g>
           )}
           <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
-          <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
+          {building && <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />}
         </g>
       </g>
 

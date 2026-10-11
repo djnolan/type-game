@@ -190,6 +190,11 @@ export class Director {
     return this.env().host?.querySelector(`[data-part="${name}"]`);
   }
 
+  // Every element of a part (the canvas is drawn in two layers).
+  parts(name) {
+    return [...(this.env().host?.querySelectorAll(`[data-part="${name}"]`) ?? [])];
+  }
+
   style(el, props) {
     if (!el) return;
     el.style.transition = 'none';
@@ -197,7 +202,7 @@ export class Director {
   }
 
   hideParts(...names) {
-    for (const n of names) this.style(this.part(n), { visibility: 'hidden' });
+    for (const n of names) for (const el of this.parts(n)) this.style(el, { visibility: 'hidden' });
   }
 
   // Header, tray and Done opacity; the tray also slides down by `trayY` px.
@@ -210,7 +215,7 @@ export class Director {
 
   // Hands everything back to the stage and header.
   clearStage() {
-    for (const n of STAGE_PARTS) this.part(n)?.removeAttribute('style');
+    for (const n of STAGE_PARTS) for (const el of this.parts(n)) el.removeAttribute('style');
     this.env().header?.removeAttribute('style');
   }
 
@@ -300,7 +305,7 @@ export class Director {
   // The new puzzle is in place: the stage takes over again and Done fades in.
   async finishInGame(...nodes) {
     this.drop(...nodes);
-    for (const n of ['target', 'canvas', 'tray', 'caption']) this.part(n)?.removeAttribute('style');
+    for (const n of ['target', 'canvas', 'tray', 'caption']) for (const el of this.parts(n)) el.removeAttribute('style');
     this.env().header?.removeAttribute('style');
     await this.seq.tween(T.doneIn.duration, (e) => this.chrome({ done: e }), T.doneIn.ease);
     this.clearStage();

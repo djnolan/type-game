@@ -41,8 +41,7 @@ export function targetFace({ world, level, D, shape }) {
   );
 }
 
-// A correct match: the player's accent letters fill the target's knockouts,
-// with an accent border. The shimmer band (hidden off to the left until
+// A correct match: the player's accent letters fill the target's knockouts. The shimmer band (hidden off to the left until
 // animated) is clipped to the letter shapes.
 export function solvedFace({ world, level, D, shape }) {
   const id = `f${++uid}`;
@@ -55,7 +54,7 @@ export function solvedFace({ world, level, D, shape }) {
       board(D, shape, 'class="fill-fg"') +
       `<g clip-path="url(#${id})" class="fill-accent">${letters}</g>` +
       `<g clip-path="url(#${id})"><g clip-path="url(#${id}l)"><rect data-shimmer x="${-D}" y="${-0.3 * D}" width="${0.32 * D}" height="${1.6 * D}" fill="url(#${id}g)" transform="skewX(-20)"/></g></g>` +
-      board(D, shape, 'class="fill-none" style="stroke:var(--accent);stroke-width:var(--outline-width)"'),
+      board(D, shape, 'class="fill-none stroke-outline"'),
   );
 }
 
