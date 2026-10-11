@@ -49,7 +49,7 @@ export const transitions = {
 
   // Level complete
   shrink: { duration: 200, scale: 0.94, ease: easeOutCubic },
-  rays: { duration: 480, count: 12, strokeWidth: 3.5, distance: 46, gap: 8 },
+  rays: { duration: 400, count: 12, strokeWidth: 1.5, distance: 34, gap: 8 },
   shimmer: { duration: 560, ease: easeInOutCubic },
   holdAfterFeedback: 120,
   flip: { duration: 700, ease: easeInOutBack(1.25) },

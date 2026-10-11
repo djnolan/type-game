@@ -246,7 +246,7 @@ export class Director {
     await wait(T.holdAfterFeedback);
   }
 
-  // Short accent strokes shoot out from just outside the circle. Each head
+  // Short foreground strokes shoot out from just outside the circle. Each head
   // leads and its tail catches up until the stroke is gone.
   async rays(board, g) {
     const { count, strokeWidth, distance, gap, duration } = T.rays;
@@ -258,7 +258,7 @@ export class Director {
     svg.setAttribute('aria-hidden', 'true');
     svg.innerHTML = Array.from(
       { length: count },
-      () => `<line style="stroke:var(--accent)" stroke-width="${strokeWidth}" stroke-linecap="round"/>`,
+      () => `<line style="stroke:var(--fg)" stroke-width="${strokeWidth}"/>`,
     ).join('');
     const rays = this.node(svg, size, size, 7).set({ x: board.x, y: board.y });
     await this.seq.tween(duration, (_, t) => {

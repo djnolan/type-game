@@ -395,7 +395,14 @@ export default function Stage({
     } else if (g.type === 'canvas') {
       // Straight up and down only: the target is directly above. It can't go
       // past the target, so its top edge stops at the target's top edge.
-      setOffset({ x: 0, y: Math.max(L.target.cy - L.canvas.cy, g.startOffset.y + dy) });
+      // Reaching it checks the answer straight away, without waiting for the drop.
+      const top = L.target.cy - L.canvas.cy;
+      setOffset({ x: 0, y: Math.max(top, g.startOffset.y + dy) });
+      if (g.startOffset.y + dy <= top) {
+        gesture.current = null;
+        svgRef.current.releasePointerCapture?.(e.pointerId);
+        releaseCanvas();
+      }
     }
   }
 

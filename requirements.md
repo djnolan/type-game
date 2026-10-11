@@ -41,7 +41,7 @@ Top to bottom:
 ### Progress indicator
 - One dot per world (5 worlds).
 - A completed world is a filled dot.
-- The current world has a small accent dot in its centre, and a thicker ring that fills like a donut chart as its levels are completed.
+- The current world has a small foreground-colored dot in its centre, and a thicker ring that fills like a donut chart as its levels are completed.
 - Future worlds are empty circles.
 
 ## Core interactions
@@ -65,7 +65,7 @@ Top to bottom:
 1. Player taps **Done**.
 2. The UI clears away, leaving the canvas circle draggable. A cancel (×) button takes Done's place; tapping it returns to building.
 3. The player's letters switch to the **accent color** so they read against the target.
-4. The player drags the canvas circle up onto the target. The drag is vertical only, and stops when the canvas's top edge reaches the target's. Near alignment, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
+4. The player drags the canvas circle up onto the target. The drag is vertical only, and stops when the canvas's top edge reaches the target's. Reaching the target checks the answer right away, even before the player lets go. Near alignment on release, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
 5. **Pass:** the match must be perfect. Because the target always sits on the world's grid, a perfect match is always possible.
 6. **Fail:** unlimited retries. The canvas returns, with the player's letters kept, so they can adjust.
 

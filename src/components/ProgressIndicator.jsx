@@ -11,8 +11,8 @@ export function ringDash(r, fraction) {
   return `${Math.max(0, Math.min(1, fraction)) * c} ${c}`;
 }
 
-// One dot per world: completed worlds are filled, the current world has an
-// accent dot with a ring that fills like a donut chart as its levels are
+// One dot per world: completed worlds are filled, the current world has a
+// small centre dot with a ring that fills like a donut chart as its levels are
 // completed, and future worlds are empty.
 export default function ProgressIndicator({ worlds }) {
   const width = STEP * (worlds.length - 1) + 2 * R + 2;
@@ -39,7 +39,7 @@ export default function ProgressIndicator({ worlds }) {
                   data-progress-ring=""
                   data-r={RING_R}
                 />
-                <circle cx={cx} cy={cy} r={1.8} className="fill-accent" />
+                <circle cx={cx} cy={cy} r={1.8} className="fill-fg" />
               </>
             )}
           </g>
