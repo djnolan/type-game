@@ -19,6 +19,11 @@ const TRAY_GAP = trayConfig.letterGap;
 const TRAY_INSET = trayConfig.trackInset;
 const TICK_STEP = trayConfig.tickStep;
 
+// Half of --outline-width (styles.css). Each outline is hidden inside the
+// other circle up to the inner edge of its stroke, so when the circles line up
+// both outlines show at full width.
+const OUTLINE_HALF = 0.75;
+
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -515,12 +520,26 @@ export default function Stage({
         <clipPath id={`zone-${uid}`}>
           <rect x={zone.left} y={zone.top} width={zone.right - zone.left} height={zone.bottom - zone.top} />
         </clipPath>
+        {/* Everywhere except inside the other circle, for the outlines. */}
+        <mask id={`off-target-${uid}`} maskUnits="userSpaceOnUse" x={-width} y={-height} width={3 * width} height={3 * height}>
+          <rect x={-width} y={-height} width={3 * width} height={3 * height} fill="white" />
+          <Board c={{ ...L.target, cx: L.target.cx + shake, r: L.target.r - OUTLINE_HALF }} shape={shape} fill="black" />
+        </mask>
+        <mask id={`off-canvas-${uid}`} maskUnits="userSpaceOnUse" x={-width} y={-height} width={3 * width} height={3 * height}>
+          <rect x={-width} y={-height} width={3 * width} height={3 * height} fill="white" />
+          <Board
+            c={{ cx: L.canvas.cx + offset.x + shake, cy: L.canvas.cy + offset.y, r: L.canvas.r - OUTLINE_HALF }}
+            shape={shape}
+            fill="black"
+          />
+        </mask>
       </defs>
 
-      {/* Canvas, back layer: fill, dot grid and outline, below the target, so
-          while checking the outline passes under the target instead of over
-          its letters. While building, the outline is drawn again on top of the
-          letters (front layer). */}
+      {/* The canvas is drawn in two layers around the target: its fill and dot
+          grid below, its letters above. Both outlines go on top of all the
+          letters, each hidden inside the other circle, so while the canvas is
+          dragged up neither outline crosses letters, and no letter covers an
+          outline. */}
       <g data-part="canvas">
         <g transform={`translate(${offset.x + shake} ${offset.y})`}>
           <Board
@@ -530,7 +549,6 @@ export default function Stage({
             style={{ pointerEvents: 'all', cursor: phase === 'check' ? 'grab' : undefined }}
           />
           <g className={`fades ${checking ? 'hidden' : ''}`}>{dots}</g>
-          <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
         </g>
       </g>
 
@@ -540,7 +558,6 @@ export default function Stage({
         <g transform={shake ? `translate(${shake} 0)` : undefined}>
           <Board c={L.target} shape={shape} className="fill-fg" />
           <g clipPath={`url(#target-${uid})`}>{renderLetters(target, L.targetBox, 'fill-bg', false)}</g>
-          <Board c={L.target} shape={shape} className="fill-none stroke-outline" />
         </g>
       </g>
 
@@ -553,8 +570,6 @@ export default function Stage({
         </g>
       )}
 
-      {/* Canvas, front layer: the letters, above the target so they show
-          over it while the canvas is dragged up to check. */}
       <g data-part="canvas">
         <g transform={`translate(${offset.x + shake} ${offset.y})`}>
           {/* Invisible, uncropped copies of placed letters, so a letter that's
@@ -566,7 +581,16 @@ export default function Stage({
             </g>
           )}
           <g clipPath={`url(#canvas-${uid})`}>{renderLetters(letters, L.canvasBox, letterClass, building)}</g>
-          {building && <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />}
+        </g>
+        <g mask={`url(#off-target-${uid})`}>
+          <g transform={`translate(${offset.x + shake} ${offset.y})`}>
+            <Board c={L.canvas} shape={shape} className="fill-none stroke-outline" />
+          </g>
+        </g>
+      </g>
+      <g data-part="target" mask={`url(#off-canvas-${uid})`}>
+        <g transform={shake ? `translate(${shake} 0)` : undefined}>
+          <Board c={L.target} shape={shape} className="fill-none stroke-outline" />
         </g>
       </g>
 
