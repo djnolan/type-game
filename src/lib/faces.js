@@ -64,8 +64,8 @@ export function solvedFace({ world, level, mark, D, shape }) {
   return svg(
     D,
     `<defs><clipPath id="${id}">${board(D, shape)}</clipPath><clipPath id="${id}l">${letters}</clipPath>` +
-      `<linearGradient id="${id}g"><stop offset="0" stop-color="var(--bg)" stop-opacity="0"/>` +
-      `<stop offset=".5" stop-color="var(--bg)" stop-opacity=".75"/><stop offset="1" stop-color="var(--bg)" stop-opacity="0"/></linearGradient></defs>` +
+      `<linearGradient id="${id}g"><stop offset="0" stop-color="var(--shine)" stop-opacity="0"/>` +
+      `<stop offset=".5" stop-color="var(--shine)" stop-opacity=".75"/><stop offset="1" stop-color="var(--shine)" stop-opacity="0"/></linearGradient></defs>` +
       board(D, shape, 'class="fill-fg"') +
       `<g clip-path="url(#${id})" class="fill-accent">${letters}</g>` +
       `<g clip-path="url(#${id})"><g clip-path="url(#${id}l)"><rect data-shimmer x="${-D}" y="${-0.3 * D}" width="${0.32 * D}" height="${1.6 * D}" fill="url(#${id}g)" transform="skewX(-20)"/></g></g>` +

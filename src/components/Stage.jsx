@@ -462,7 +462,8 @@ export default function Stage({
 
   const building = phase === 'build';
   const checking = !building;
-  const letterClass = checking ? 'fill-accent' : 'fill-fg';
+  // Letters fade to the accent while checking, and back after.
+  const letterClass = `recolors ${checking ? 'fill-accent' : 'fill-fg'}`;
   const cell = L.D / grid;
   const zone = dropZone();
 

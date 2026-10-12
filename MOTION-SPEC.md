@@ -38,10 +38,10 @@ A new blank canvas (empty grid) rises from below the screen to its normal positi
    - **Solved with a mark:**
      1. Hold the solved letters so they can be seen clearly: 400ms after the scale down.
      2. **Rays** fire: 12 short foreground strokes shoot outward from just outside the circle. The head of each stroke leads and the tail catches up until it disappears. 400ms. Stroke width 1.5, travel distance about 34px, starting 8px out from the circle.
-     3. At the same moment, the whole solved circle **fills with the accent color**, growing outward from the center and covering the letters completely: 300ms, `easeOutCubic`.
-     4. Also at the same moment, the **mark pops in** at the center, on top of the fill, scaling from 0 with a slight overshoot: 300ms, `easeOutBack(1.4)`. It's set in DM Sans (a UI element, not the world typeface) in the background color, with its longer side about 35% of the circle's diameter.
+     3. A touch later, 250ms after the rays start, so the letter success reads first, the whole solved circle **fills with the accent color**, growing outward from the center and covering the letters completely: 300ms, `easeOutCubic`.
+     4. 100ms after the fill starts, the **mark pops in** at the center, on top of the fill, scaling from 0 with a slight overshoot: 300ms, `easeOutBack(1.4)`. It's set in DM Sans (a UI element, not the world typeface) in the background color, with its longer side about 35% of the circle's diameter. The asterisk is drawn at 78% of that so it matches the daggers' visual size (also on the badge and Done).
      5. Hold the filled circle with its mark for 500ms.
-   - **Solved with no mark:** a **shimmer**, a soft, light diagonal band, sweeps across the accent letters only, clipped to the letter shapes: 560ms, `easeInOutCubic`. No rays, no fill and no mark. Then hold for 120ms.
+   - **Solved with no mark:** a **shimmer**, a soft, light diagonal band (light in both modes: the background color in light mode, the foreground in dark), sweeps across the accent letters only, clipped to the letter shapes: 560ms, `easeInOutCubic`. No rays, no fill and no mark. Then hold for 120ms.
    - Every timing here lives in the motion config (`solvedHold`, `rays`, `fill`, `markPop`, `holdAfterMark`, `shimmer`, `holdAfterFeedback`).
 4. Coin flip 180° to the next level's target, from the circle as the feedback left it (filled with its mark, or showing the letters): 700ms. Scale back from 0.94 to 1 during the first 320ms, so the scale change is hidden inside the flip.
 5. Canvas enter, starting 260ms after the flip starts.

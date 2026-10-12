@@ -239,8 +239,8 @@ export class Director {
   // ---- Shared steps ------------------------------------------------------------
 
   // Solved state, scale down, success feedback, hold. Solved with a mark, the
-  // letters hold, then rays fire as the circle fills with the accent and the
-  // mark pops in; the filled circle holds before the flip. With no mark, a
+  // letters hold and rays fire, then a touch later the circle fills with the
+  // accent and the mark pops in; the filled circle holds before the flip. With no mark, a
   // shimmer sweeps over the letters instead.
   async celebrate(board, g, mark) {
     const { tween, wait, after } = this.seq;
@@ -260,6 +260,7 @@ export class Director {
     const rays = this.rays(board, g);
     // Awaited after the hold; this keeps a cancel before then from going unhandled.
     rays.catch(() => {});
+    await wait(T.fill.delay);
     await Promise.all([
       tween(T.fill.duration, (e) => fill?.setAttribute('r', reach * e), T.fill.ease),
       after(T.markPop.delay, () =>

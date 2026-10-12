@@ -22,11 +22,15 @@ export const isPerfect = (marks) => marks.length > 0 && marks.every((m) => m ===
 // [x1, y1, x2, y2] with y up.
 const BOXES = { 1: [64, 360, 427, 734], 2: [43, -260, 510, 782], 3: [43, -260, 511, 782] };
 
+// The asterisk is drawn smaller than the daggers so the three read as one size.
+const SCALE = { 1: 0.78, 2: 1, 3: 1 };
+
 // Where to set a mark so its outline is centred on (cx, cy), with its longer
-// side `size` px. Returns the character, the text's origin and its font size.
+// side `size` px (less for the asterisk, see SCALE). Returns the character,
+// the text's origin and its font size.
 export function markLayout(mark, cx, cy, size) {
   const [x1, y1, x2, y2] = BOXES[mark];
-  const fontSize = (size * 1000) / Math.max(x2 - x1, y2 - y1);
+  const fontSize = (size * SCALE[mark] * 1000) / Math.max(x2 - x1, y2 - y1);
   const k = fontSize / 1000;
   return { char: CHARS[mark], x: cx - ((x1 + x2) / 2) * k, y: cy + ((y1 + y2) / 2) * k, fontSize };
 }

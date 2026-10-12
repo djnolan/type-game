@@ -23,6 +23,8 @@
   --grid-dot: color-mix(in srgb, var(--fg) 11%, var(--bg));
   /* Darkens a circle as it turns edge-on during a coin flip. */
   --shade: var(--fg);
+  /* The light band of the success shimmer: always the lighter of bg and fg. */
+  --shine: var(--bg);
 
   --outline-width: 1.5px;
   --ui-font: 'DM Sans', system-ui, sans-serif;
@@ -34,6 +36,7 @@
     --bg: #1a1916;
     --fg: #e8e2d5;
     --shade: #0b0a09;
+    --shine: var(--fg);
     color-scheme: dark;
   }
 }
@@ -42,6 +45,7 @@
   --bg: #1a1916;
   --fg: #e8e2d5;
   --shade: #0b0a09;
+  --shine: var(--fg);
   color-scheme: dark;
 }
 
@@ -123,6 +127,11 @@ button {
   display: block;
   touch-action: none;
   overflow: hidden;
+}
+
+/* Placed letters fade between ink and accent around a check. */
+.recolors {
+  transition: fill var(--fade-ms, 180ms) ease;
 }
 
 .fades {
