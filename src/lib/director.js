@@ -246,7 +246,10 @@ export class Director {
   async celebrate(board, g, mark) {
     const { tween, wait, after } = this.seq;
     const band = board.front.querySelector('[data-shimmer]');
-    const shrink = () => tween(T.shrink.duration, (e) => board.set({ s: lerp(1, T.shrink.scale, e) }), T.shrink.ease);
+    const y0 = board.y;
+    const drop = T.shrink.drop * g.k;
+    const shrink = () =>
+      tween(T.shrink.duration, (e) => board.set({ s: lerp(1, T.shrink.scale, e), y: y0 + drop * e }), T.shrink.ease);
     const shimmer = () => tween(T.shimmer.duration, (e) => band?.setAttribute('x', lerp(-0.6 * g.D, 1.5 * g.D, e)), T.shimmer.ease);
     if (!mark) {
       await shrink();
@@ -360,7 +363,7 @@ export class Director {
       let canvas;
       await Promise.all([
         tween(T.flip.duration, (e) => board.set({ ry: 180 * e }), T.flip.ease),
-        tween(T.flip.duration, (e) => board.set({ y: lerp(g.targetY, g2.targetY, e) }), T.flipScaleBack.ease),
+        tween(T.flip.duration, (e) => board.set({ y: lerp(g.targetY + T.shrink.drop * g.k, g2.targetY, e) }), T.flipScaleBack.ease),
         tween(T.flipScaleBack.duration, (e) => board.set({ s: lerp(T.shrink.scale, sEnd, e) }), T.flipScaleBack.ease),
         this.animateProgress(progress.from, progress.to, T.flip.duration * T.progressFill.fraction, T.progressFill.ease),
         this.canvasEnter(g2, canvasFace({ ...to, D: g2.D, shape })).then((c) => (canvas = c)),
@@ -388,7 +391,7 @@ export class Director {
       // Travel down to the centre; the game's chrome leaves.
       const tr = T.worldTravel;
       await Promise.all([
-        tween(tr.duration, (e) => board.set({ y: lerp(g.targetY, g.centerY, e), s: lerp(T.shrink.scale, 1, e) }), tr.ease),
+        tween(tr.duration, (e) => board.set({ y: lerp(g.targetY + T.shrink.drop * g.k, g.centerY, e), s: lerp(T.shrink.scale, 1, e) }), tr.ease),
         tween(
           tr.duration * tr.chromeFraction,
           (e) => this.chrome({ header: 1 - e, tray: 0, done: 0 }),

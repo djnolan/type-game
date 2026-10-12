@@ -45,7 +45,9 @@ export const gestures = {
 // 390px-wide screen; they scale with the screen width.
 export const transitions = {
   // Level complete
-  shrink: { duration: 200, scale: 0.94, ease: easeOutCubic },
+  // The solved circle scales down and drops `drop` px, to give it a little
+  // more room under the header; it rises back during the flip.
+  shrink: { duration: 200, scale: 0.94, drop: 10, ease: easeOutCubic },
   // Success feedback. Solved with a mark (lib/marks.js): the shimmer sweeps
   // over the letters as the circle scales down. After `markBeat` (from the end
   // of the shimmer), rays fire as the circle fills with the accent from its
@@ -59,7 +61,8 @@ export const transitions = {
   fill: { duration: 300, ease: easeOutCubic },
   markPop: { delay: 60, duration: 300, ease: easeOutBack(1.4), size: 0.22, ghostOpacity: 0.25 },
   holdAfterMark: 800,
-  shimmer: { duration: 560, ease: easeInOutCubic },
+  // `opacity` is the band's brightness at its centre.
+  shimmer: { duration: 760, opacity: 0.5, ease: easeInOutCubic },
   holdAfterFeedback: 400,
   flip: { duration: 700, ease: easeInOutBack(1.25) },
   flipScaleBack: { duration: 320, ease: easeInOutCubic },
