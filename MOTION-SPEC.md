@@ -33,7 +33,7 @@ A new blank canvas (empty grid) rises from below the screen to its normal positi
 **Trigger:** a correct match, after the canvas has snapped onto the target. At this point the two circles act as one.
 
 1. Show the combined circle in its solved state: the matched letters in the accent color. Hide the separate canvas.
-2. Scale down to 0.94 while dropping 10px, to ease the crowding under the header: 200ms, `easeOutCubic`. It rises back during the coin flip.
+2. Scale down to 0.94 while dropping 40px, to ease the crowding under the header: 200ms, `easeOutCubic`. It rises back during the coin flip.
 3. Success feedback, depending on the level's mark (the asterisk with 3, 2 or 1 lines for solving on check 1, 2 or 3; none after that). The **shimmer** is a soft, light diagonal band (light in both modes: the background color in light mode, the foreground in dark) that sweeps across the accent letters only, clipped to the letter shapes, at 50% brightness in its center: 760ms, `easeInOutCubic`.
    - **Solved with a mark:**
      1. The shimmer sweeps while the circle scales down (both start together), locking the success into place.
