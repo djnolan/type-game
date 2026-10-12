@@ -47,7 +47,7 @@ export const transitions = {
   // Level complete
   // The solved circle scales down and drops `drop` px, to give it a little
   // more room under the header; it rises back during the flip.
-  shrink: { duration: 200, scale: 0.94, drop: 40, ease: easeOutCubic },
+  shrink: { duration: 200, scale: 0.94, drop: 20, ease: easeOutCubic },
   // Success feedback. Solved with a mark (lib/marks.js): the shimmer sweeps
   // over the letters as the circle scales down. After `markBeat` (from the end
   // of the shimmer), rays fire as the circle fills with the accent from its
