@@ -54,13 +54,13 @@ export const transitions = {
   // a fraction of the diameter, and the full asterisk shows under it at
   // `ghostOpacity`, so the lines it lost still read. The filled circle holds,
   // then flips. Solved with no mark: the shimmer follows the scale down.
-  markBeat: 300,
+  markBeat: 500,
   rays: { duration: 400, count: 12, strokeWidth: 1.5, distance: 34, gap: 8 },
   fill: { duration: 300, ease: easeOutCubic },
   markPop: { delay: 60, duration: 300, ease: easeOutBack(1.4), size: 0.22, ghostOpacity: 0.25 },
-  holdAfterMark: 500,
+  holdAfterMark: 800,
   shimmer: { duration: 560, ease: easeInOutCubic },
-  holdAfterFeedback: 120,
+  holdAfterFeedback: 400,
   flip: { duration: 700, ease: easeInOutBack(1.25) },
   flipScaleBack: { duration: 320, ease: easeInOutCubic },
   // The header's progress dot fills during the flip.

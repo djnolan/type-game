@@ -37,12 +37,12 @@ A new blank canvas (empty grid) rises from below the screen to its normal positi
 3. Success feedback, depending on the level's mark (the asterisk with 3, 2 or 1 lines for solving on check 1, 2 or 3; none after that). The **shimmer** is a soft, light diagonal band (light in both modes: the background color in light mode, the foreground in dark) that sweeps across the accent letters only, clipped to the letter shapes: 560ms, `easeInOutCubic`.
    - **Solved with a mark:**
      1. The shimmer sweeps while the circle scales down (both start together), locking the success into place.
-     2. A beat: 300ms after the shimmer ends.
+     2. A beat: 500ms after the shimmer ends.
      3. **Rays** fire: 12 short foreground strokes shoot outward from just outside the circle. The head of each stroke leads and the tail catches up until it disappears. 400ms. Stroke width 1.5, travel distance about 34px, starting 8px out from the circle.
      4. At the same moment, the whole solved circle **fills with the accent color**, growing outward from the center and covering the letters completely: 300ms, `easeOutCubic`.
      5. 60ms after the fill starts, the **mark pops in** at the center, on top of the fill, scaling from 0 with a slight overshoot: 300ms, `easeOutBack(1.4)`. It's the DM Sans asterisk outline (a UI element, not the world typeface) in the background color, centered on its own bounds, with its longer side about 22% of the circle's diameter. The lines it lost are hidden by wedge clips, and the full asterisk sits underneath at 25% opacity (`markPop.ghostOpacity`) so its whole shape stays visible. The faint asterisk pops in with it.
-     6. Hold the filled circle with its mark for 500ms.
-   - **Solved with no mark:** the shimmer sweeps after the scale down. No rays, no fill and no mark. Then hold for 120ms.
+     6. Hold the filled circle with its mark for 800ms.
+   - **Solved with no mark:** the shimmer sweeps after the scale down. No rays, no fill and no mark. Then hold for 400ms.
    - Every timing here lives in the motion config (`shimmer`, `markBeat`, `rays`, `fill`, `markPop`, `holdAfterMark`, `holdAfterFeedback`).
 4. Coin flip 180° to the next level's target, from the circle as the feedback left it (filled with its mark, or showing the letters): 700ms. Scale back from 0.94 to 1 during the first 320ms, so the scale change is hidden inside the flip.
 5. Canvas enter, starting 260ms after the flip starts.
