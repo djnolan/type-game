@@ -43,24 +43,18 @@ export function targetFace({ world, level, D, shape }) {
   );
 }
 
-// A correct match: the player's accent letters fill the target's knockouts.
+// A correct match: the player's accent letters fill the target's knockouts,
+// with a shimmer band (off to the left until animated) clipped to the letters.
 // Solved with a mark, it also holds an accent fill (radius 0 until animated)
-// and the mark on top, over a faint full asterisk, scaled to 0 until it pops in. Solved with no mark, it
-// holds a shimmer band (off to the left until animated), clipped to the letters.
+// and the mark on top, over a faint full asterisk, scaled to 0 until it pops in.
 export function solvedFace({ world, level, mark, D, shape }) {
   const id = `f${++uid}`;
   const letters = letterPaths(world, level, D);
   const r = D / 2;
-  if (mark) {
-    return svg(
-      D,
-      `<defs><clipPath id="${id}">${board(D, shape)}</clipPath></defs>` +
-        board(D, shape, 'class="fill-fg"') +
-        `<g clip-path="url(#${id})" class="fill-accent">${letters}<circle data-fill cx="${r}" cy="${r}" r="0"/></g>` +
-        `<g data-mark transform="translate(${r} ${r}) scale(0)">${markSvg(mark, 0, 0, D * T.markPop.size, 'var(--bg)', { ghost: T.markPop.ghostOpacity })}</g>` +
-        board(D, shape, 'class="fill-none stroke-outline"'),
-    );
-  }
+  const marked = mark
+    ? `<g clip-path="url(#${id})" class="fill-accent"><circle data-fill cx="${r}" cy="${r}" r="0"/></g>` +
+      `<g data-mark transform="translate(${r} ${r}) scale(0)">${markSvg(mark, 0, 0, D * T.markPop.size, 'var(--bg)', { ghost: T.markPop.ghostOpacity })}</g>`
+    : '';
   return svg(
     D,
     `<defs><clipPath id="${id}">${board(D, shape)}</clipPath><clipPath id="${id}l">${letters}</clipPath>` +
@@ -69,6 +63,7 @@ export function solvedFace({ world, level, mark, D, shape }) {
       board(D, shape, 'class="fill-fg"') +
       `<g clip-path="url(#${id})" class="fill-accent">${letters}</g>` +
       `<g clip-path="url(#${id})"><g clip-path="url(#${id}l)"><rect data-shimmer x="${-D}" y="${-0.3 * D}" width="${0.32 * D}" height="${1.6 * D}" fill="url(#${id}g)" transform="skewX(-20)"/></g></g>` +
+      marked +
       board(D, shape, 'class="fill-none stroke-outline"'),
   );
 }

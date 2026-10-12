@@ -238,20 +238,24 @@ export class Director {
 
   // ---- Shared steps ------------------------------------------------------------
 
-  // Solved state, scale down, success feedback, hold. Solved with a mark, the
-  // letters hold and rays fire, then a touch later the circle fills with the
-  // accent and the mark pops in; the filled circle holds before the flip. With no mark, a
-  // shimmer sweeps over the letters instead.
+  // Solved state, scale down, success feedback, hold. With no mark, a shimmer
+  // sweeps over the letters after the scale down. Solved with a mark, the
+  // shimmer sweeps as it scales down, locking the success in; after a beat the
+  // rays fire as the circle fills with the accent and the mark pops in, and the
+  // filled circle holds before the flip.
   async celebrate(board, g, mark) {
     const { tween, wait, after } = this.seq;
-    await tween(T.shrink.duration, (e) => board.set({ s: lerp(1, T.shrink.scale, e) }), T.shrink.ease);
+    const band = board.front.querySelector('[data-shimmer]');
+    const shrink = () => tween(T.shrink.duration, (e) => board.set({ s: lerp(1, T.shrink.scale, e) }), T.shrink.ease);
+    const shimmer = () => tween(T.shimmer.duration, (e) => band?.setAttribute('x', lerp(-0.6 * g.D, 1.5 * g.D, e)), T.shimmer.ease);
     if (!mark) {
-      const band = board.front.querySelector('[data-shimmer]');
-      await tween(T.shimmer.duration, (e) => band?.setAttribute('x', lerp(-0.6 * g.D, 1.5 * g.D, e)), T.shimmer.ease);
+      await shrink();
+      await shimmer();
       await wait(T.holdAfterFeedback);
       return;
     }
-    await wait(T.solvedHold);
+    await Promise.all([shrink(), shimmer()]);
+    await wait(T.markBeat);
     const fill = board.front.querySelector('[data-fill]');
     const markEl = board.front.querySelector('[data-mark]');
     const r = g.D / 2;
@@ -260,7 +264,6 @@ export class Director {
     const rays = this.rays(board, g);
     // Awaited after the hold; this keeps a cancel before then from going unhandled.
     rays.catch(() => {});
-    await wait(T.fill.delay);
     await Promise.all([
       tween(T.fill.duration, (e) => fill?.setAttribute('r', reach * e), T.fill.ease),
       after(T.markPop.delay, () =>
