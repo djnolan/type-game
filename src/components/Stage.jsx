@@ -12,7 +12,7 @@ import {
 } from '../lib/geometry';
 import { tray as trayConfig } from '../layout';
 import { XIcon } from './Icons';
-import { REWARDED_CHECKS, markLayout } from '../lib/marks';
+import { REWARDED_CHECKS, markFor, markSvg } from '../lib/marks';
 import { gestures, motion } from '../motion';
 
 const TRAY_PAD = trayConfig.sidePadding;
@@ -26,7 +26,7 @@ const TICK_STEP = trayConfig.tickStep;
 const OUTLINE_HALF = 0.75;
 
 // Longer side, in px, of the mark Done shows in place of its dot.
-const DONE_MARK = 12;
+const DONE_MARK = 10;
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -51,14 +51,11 @@ function Glyph({ glyph, ox, oy, s, ...rest }) {
   return <path d={glyph.d} transform={`translate(${ox} ${oy}) scale(${s})`} {...rest} />;
 }
 
-// The mark the next check would earn, in Done's dot spot.
+// The mark the next check would earn, in Done's dot spot. The markup is built
+// from fixed path data and numbers only.
 function DoneMark({ mark, cx, cy }) {
-  const { char, x, y, fontSize } = markLayout(mark, cx, cy, DONE_MARK);
-  return (
-    <text x={x} y={y} className="fill-accent" style={{ font: `500 ${fontSize}px var(--ui-font)` }}>
-      {char}
-    </text>
-  );
+  const html = useMemo(() => markSvg(mark, cx, cy, DONE_MARK, 'var(--accent)'), [mark, cx, cy]);
+  return <g dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 // The gameplay surface: target circle, canvas circle, Done button and letter
@@ -626,7 +623,7 @@ export default function Stage({
           >
             <circle cx={L.done.cx} cy={L.done.cy} r={L.done.r} className="fill-bg stroke-outline" />
             {checks < REWARDED_CHECKS ? (
-              <DoneMark mark={checks + 1} cx={L.done.cx} cy={L.done.cy} />
+              <DoneMark mark={markFor(checks + 1)} cx={L.done.cx} cy={L.done.cy} />
             ) : (
               <circle cx={L.done.cx} cy={L.done.cy} r={4} className="fill-accent" />
             )}

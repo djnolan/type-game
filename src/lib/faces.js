@@ -45,7 +45,7 @@ export function targetFace({ world, level, D, shape }) {
 
 // A correct match: the player's accent letters fill the target's knockouts.
 // Solved with a mark, it also holds an accent fill (radius 0 until animated)
-// and the mark on top, scaled to 0 until it pops in. Solved with no mark, it
+// and the mark on top, over a faint full asterisk, scaled to 0 until it pops in. Solved with no mark, it
 // holds a shimmer band (off to the left until animated), clipped to the letters.
 export function solvedFace({ world, level, mark, D, shape }) {
   const id = `f${++uid}`;
@@ -57,7 +57,7 @@ export function solvedFace({ world, level, mark, D, shape }) {
       `<defs><clipPath id="${id}">${board(D, shape)}</clipPath></defs>` +
         board(D, shape, 'class="fill-fg"') +
         `<g clip-path="url(#${id})" class="fill-accent">${letters}<circle data-fill cx="${r}" cy="${r}" r="0"/></g>` +
-        `<g data-mark transform="translate(${r} ${r}) scale(0)">${markSvg(mark, 0, 0, D * T.markPop.size, 'var(--bg)')}</g>` +
+        `<g data-mark transform="translate(${r} ${r}) scale(0)">${markSvg(mark, 0, 0, D * T.markPop.size, 'var(--bg)', { ghost: T.markPop.ghostOpacity })}</g>` +
         board(D, shape, 'class="fill-none stroke-outline"'),
     );
   }
@@ -99,15 +99,15 @@ export function canvasFace({ world, level, letters = [], D, shape }) {
 // A completed world's badge. Placeholder until the custom ampersand art per
 // world is ready: a UI-font ampersand knocked out of a solid circle. `marks`
 // are the best run's marks (lib/marks.js), set small around the edge in level
-// order from the top, clockwise, with an empty spot for a level with no mark.
-// A run of all * gets the accent badge.
+// order from the top, clockwise, showing only their remaining lines, with an
+// empty spot for a level with no mark. A run of full marks gets the accent badge.
 export function badgeFace({ D, marks = [] }) {
   const r = D / 2;
   const n = marks.length;
   const ring = marks
     .map((m, i) => {
       const a = (i / n) * Math.PI * 2 - Math.PI / 2;
-      return markSvg(m, r + Math.cos(a) * r * 0.76, r + Math.sin(a) * r * 0.76, D * 0.075, 'var(--bg)');
+      return markSvg(m, r + Math.cos(a) * r * 0.76, r + Math.sin(a) * r * 0.76, D * 0.065, 'var(--bg)');
     })
     .join('');
   return svg(

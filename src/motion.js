@@ -50,12 +50,13 @@ export const transitions = {
   // hold, then rays fire over them. A touch later (`fill.delay`, from the rays)
   // the circle fills with the accent from its centre, covering the letters, and
   // the mark pops in on top in the background color (`markPop.delay`, from the
-  // fill). `size` is the mark's longer side as a fraction of the diameter. The
-  // filled circle holds, then flips. Solved with no mark: shimmer over the letters.
+  // fill). `size` is the mark's longer side as a fraction of the diameter, and
+  // the full asterisk shows under it at `ghostOpacity`, so the lines it lost
+  // still read. The filled circle holds, then flips. Solved with no mark: shimmer over the letters.
   solvedHold: 400,
   rays: { duration: 400, count: 12, strokeWidth: 1.5, distance: 34, gap: 8 },
   fill: { delay: 250, duration: 300, ease: easeOutCubic },
-  markPop: { delay: 100, duration: 300, ease: easeOutBack(1.4), size: 0.35 },
+  markPop: { delay: 100, duration: 300, ease: easeOutBack(1.4), size: 0.28, ghostOpacity: 0.25 },
   holdAfterMark: 500,
   shimmer: { duration: 560, ease: easeInOutCubic },
   holdAfterFeedback: 120,

@@ -34,12 +34,12 @@ A new blank canvas (empty grid) rises from below the screen to its normal positi
 
 1. Show the combined circle in its solved state: the matched letters in the accent color. Hide the separate canvas.
 2. Scale down to 0.94: 200ms, `easeOutCubic`.
-3. Success feedback, depending on the level's mark (`*`, `†` or `‡` for solving on check 1, 2 or 3; none after that):
+3. Success feedback, depending on the level's mark (the asterisk with 3, 2 or 1 lines for solving on check 1, 2 or 3; none after that):
    - **Solved with a mark:**
      1. Hold the solved letters so they can be seen clearly: 400ms after the scale down.
      2. **Rays** fire: 12 short foreground strokes shoot outward from just outside the circle. The head of each stroke leads and the tail catches up until it disappears. 400ms. Stroke width 1.5, travel distance about 34px, starting 8px out from the circle.
      3. A touch later, 250ms after the rays start, so the letter success reads first, the whole solved circle **fills with the accent color**, growing outward from the center and covering the letters completely: 300ms, `easeOutCubic`.
-     4. 100ms after the fill starts, the **mark pops in** at the center, on top of the fill, scaling from 0 with a slight overshoot: 300ms, `easeOutBack(1.4)`. It's set in DM Sans (a UI element, not the world typeface) in the background color, with its longer side about 35% of the circle's diameter. The asterisk is drawn at 78% of that so it matches the daggers' visual size (also on the badge and Done).
+     4. 100ms after the fill starts, the **mark pops in** at the center, on top of the fill, scaling from 0 with a slight overshoot: 300ms, `easeOutBack(1.4)`. It's the DM Sans asterisk outline (a UI element, not the world typeface) in the background color, centered on its own bounds, with its longer side about 28% of the circle's diameter. The lines it lost are hidden by wedge clips, and the full asterisk sits underneath at 25% opacity (`markPop.ghostOpacity`) so its whole shape stays visible. The faint asterisk pops in with it.
      5. Hold the filled circle with its mark for 500ms.
    - **Solved with no mark:** a **shimmer**, a soft, light diagonal band (light in both modes: the background color in light mode, the foreground in dark), sweeps across the accent letters only, clipped to the letter shapes: 560ms, `easeInOutCubic`. No rays, no fill and no mark. Then hold for 120ms.
    - Every timing here lives in the motion config (`solvedHold`, `rays`, `fill`, `markPop`, `holdAfterMark`, `shimmer`, `holdAfterFeedback`).
@@ -67,7 +67,7 @@ A new blank canvas (empty grid) rises from below the screen to its normal positi
    - **Ribbon (placeholder):** a vertical strip in the accent color with a V-notched bottom end, showing only the world number. It sits behind the badge. It starts fully hidden and ends hanging below the badge, with its top about 30px tucked behind the badge.
 7. The heading "World N complete" (placeholder style) fades in while rising 12px: 320ms, `easeOutCubic`, starting 40% of the way into the ribbon pop. The **Continue** button does the same, 240ms after the heading.
 
-**Badge:** placeholder until the final art: a solid circle with a UI-font ampersand, showing the world's best run (see Rewards in `requirements.md`). Its marks sit small around the edge in level order, with an empty spot for a level with no mark. A best run of all * gets the accent version. On a replay that didn't beat the best run, the badge shows the existing best.
+**Badge:** placeholder until the final art: a solid circle with a UI-font ampersand, showing the world's best run (see Rewards in `requirements.md`). Its marks sit small around the edge in level order, showing only their remaining lines, with an empty spot for a level with no mark. A best run of all full asterisks gets the accent version. On a replay that didn't beat the best run, the badge shows the existing best.
 
 ## 4. Continue to the next world
 

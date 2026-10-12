@@ -35,7 +35,7 @@ Top to bottom:
 1. **Header.** Back button on the left. World progress indicator on the right.
 2. **Target circle.** The puzzle: letters cropped by the circle, merged into one solid shape. Shown in reverse (background-colored letters knocked out of a solid circle) so the player's letters fill the spaces when dragged up to check.
 3. **Canvas circle.** Same size as the target, with a dot grid in the background. The player builds their answer here.
-4. **Done button.** A small circular button beside the canvas. It shows, in the accent color, the mark the player would earn on their next check: * before the first check, then †, then ‡. After 3 misses it goes back to an accent dot (see Scoring).
+4. **Done button.** A small circular button beside the canvas. It shows, in the accent color, the mark the player would earn on their next check: the asterisk with 3 lines before the first check, then 2, then 1. After 3 misses it goes back to an accent dot (see Scoring).
 5. **Letter tray.** A full A–Z row of large letters, cropped at the bottom of the screen. The letters sit on a single baseline rule, with tick marks below it (the scroll track, drawn with only its top edge).
 
 ### Progress indicator
@@ -122,15 +122,19 @@ The game should never load font files for the game pieces. Only the UI font load
 Simple scoring that discourages checking over and over.
 
 ### Level marks
-- Each level rewards its first 3 checks. Solving on check 1 earns **\*** (asterisk), on check 2 **†** (dagger), on check 3 **‡** (double dagger). Solving after that passes the level with no mark. There's no other penalty, and checks stay unlimited.
+- The mark is an **asterisk that loses lines**. Its 6 arms form 3 lines through the center. Each level rewards its first 3 checks: solving on check 1 earns the full asterisk (3 lines), check 2 earns 2 lines, check 3 earns 1 line. Solving after that passes the level with no mark. There's no other penalty, and checks stay unlimited.
+- Lines go in a fixed order: one diagonal first, then the other diagonal. The vertical line is always the last one left.
 - A check is the canvas reaching the target and being judged. Cancelling, or letting the canvas drop back short of the target, doesn't count.
 - A level's checks are saved, so leaving the level or reloading doesn't reset them.
-- Marks are UI elements, set in DM Sans (500), not the world typeface. The Fontsource DM Sans files lack ‡ (and keep † only in the latin-ext file), so a small supplement holding † and ‡ from the full Google Fonts DM Sans is loaded for U+2020–2021 (`src/fonts/`, built by `scripts/build-marks-font.py`). Mark logic and metrics live in `src/lib/marks.js`.
+- The mark is a UI element: the actual DM Sans (500) asterisk outline, extracted from the font as a path, not the world typeface. It's centered on its own bounds, not at the font's raised asterisk position.
+- A lost line's two opposite arms are hidden with wedge-shaped clips centered on those arms; the arms are never redrawn Since the wedges meet in a point, the clip also keeps a narrow bridge across the center along each remaining line, so a single line doesn't pinch where it crosses the hub.
+- At small sizes (Done button, badge) only the remaining lines show. At large size (the success circle) the full asterisk is drawn underneath at 25% opacity (`markPop.ghostOpacity` in `src/motion.js`), with the clipped mark on top, so the whole shape stays visible.
+- Mark logic and the outline live in `src/lib/marks.js`.
 - When a level is solved with a mark, the solved circle fills with the accent color and shows the mark (see `MOTION-SPEC.md`, Level complete).
 
 ### World runs
 - A **world run** is one playthrough of all of a world's levels, from level 1. The run records the mark for each level.
-- A run's score is the total of its marks: * = 3, † = 2, ‡ = 1, no mark = 0.
+- A run's score is the total of its marks: 3 lines = 3 points, 2 lines = 2, 1 line = 1, no mark = 0.
 - A world keeps its **best complete run**. A finished run replaces it only if it scores higher; a tie keeps the existing one.
 - **Replaying:** choosing a completed world in the world menu starts a full replay from level 1 (if one of that world's levels is already on screen, it carries on from there instead). The replay goes through the world's levels in order. The existing badge stays until a replay is finished, and is replaced only if the new run scores higher. An unfinished replay doesn't affect it.
 - Runs, checks and best runs are saved locally alongside progress.
@@ -138,7 +142,7 @@ Simple scoring that discourages checking over and over.
 ## Rewards
 
 - Completing a world earns a **badge: a custom-designed ampersand per world**. Until the art is ready, the badge is a placeholder (a UI-font ampersand knocked out of a solid circle, `badgeFace` in `src/lib/faces.js`).
-- The badge reflects the world's best complete run (see Scoring). If every level in it has \*, the badge is the accent version; otherwise it's the standard badge.
+- The badge reflects the world's best complete run (see Scoring). If every level in it has the full 3-line asterisk, the badge is the accent version; otherwise it's the standard badge.
 - The badge shows the best run's marks. Placeholder: small marks spaced around the badge's edge in level order, from the top, clockwise, with an empty spot for each level that had no mark. The final badge art comes later.
 - The badge appears on the world complete screen and in the world menu.
 

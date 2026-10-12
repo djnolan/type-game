@@ -92,7 +92,8 @@ export function worldStates(completed, activeWorld) {
 //
 // Stored as { best: { [world]: [mark per level] },
 //             runs: { [world]: { marks: { [levelId]: mark }, checks: { [levelId]: n } } } }.
-const RUNS_KEY = 'type-game/runs/v1';
+// v2: marks count the asterisk's lines (3 best); v1 stored 1 as best.
+const RUNS_KEY = 'type-game/runs/v2';
 const NO_RUNS = { best: {}, runs: {} };
 
 function loadRuns() {
