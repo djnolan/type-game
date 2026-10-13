@@ -26,7 +26,7 @@ This first build is a **web prototype for iterating on core gameplay**. It may b
 - Polished motion language beyond the transitions in `MOTION-SPEC.md` (see Motion)
 - Sound and haptics
 - Scaling, rotating, or flipping letters
-- Timers and scoring
+- Timers, and any scoring beyond level marks (see Scoring)
 
 ## Gameplay screen
 
@@ -35,7 +35,7 @@ Top to bottom:
 1. **Header.** Back button on the left. World progress indicator on the right.
 2. **Target circle.** The puzzle: letters cropped by the circle, merged into one solid shape. Shown in reverse (background-colored letters knocked out of a solid circle) so the player's letters fill the spaces when dragged up to check.
 3. **Canvas circle.** Same size as the target, with a dot grid in the background. The player builds their answer here.
-4. **Done button.** A small circular button with an accent-colored dot, beside the canvas.
+4. **Done button.** A small circular button beside the canvas. It shows, in the accent color, the mark the player would earn on their next check: the asterisk with 3 lines before the first check, then 2, then 1. After 3 misses it goes back to an accent dot (see Scoring).
 5. **Letter tray.** A full A–Z row of large letters, cropped at the bottom of the screen. The letters sit on a single baseline rule, with tick marks below it (the scroll track, drawn with only its top edge).
 
 ### Progress indicator
@@ -64,10 +64,10 @@ Top to bottom:
 ### Checking an answer
 1. Player taps **Done**.
 2. The UI clears away, leaving the canvas circle draggable. A cancel (×) button takes Done's place; tapping it returns to building.
-3. The player's letters switch to the **accent color** so they read against the target.
+3. The player's letters fade quickly to the **accent color** so they read against the target. They fade back to the foreground color when the player returns to building (cancel, or after a failed check).
 4. The player drags the canvas circle up onto the target. The drag is vertical only, and stops when the canvas's top edge reaches the target's. Reaching the target checks the answer right away, even before the player lets go. Near alignment on release, it snaps into place. If it's let go short of that, it drops back and stays draggable for another try.
 5. **Pass:** the match must be perfect. Because the target always sits on the world's grid, a perfect match is always possible.
-6. **Fail:** unlimited retries. The canvas returns, with the player's letters kept, so they can adjust.
+6. **Fail:** unlimited retries. The canvas returns, with the player's letters kept, so they can adjust. Each check counts toward the level's mark (see Scoring).
 
 Since each letter is used once, the check compares each placed letter's grid position against the solution.
 
@@ -117,9 +117,33 @@ The game should never load font files for the game pieces. Only the UI font load
 - The game renders letters from that path data only.
 - All five world typefaces go through this same pipeline. Variable fonts are first pinned to a static instance (fontTools' instancer), since opentype.js handles variable fonts poorly. Adding or swapping a font means dropping it in the local folder, editing the world config and rerunning the script.
 
+## Scoring
+
+Simple scoring that discourages checking over and over.
+
+### Level marks
+- The mark is an **asterisk that loses lines**. Its 6 arms form 3 lines through the center. Each level rewards its first 3 checks: solving on check 1 earns the full asterisk (3 lines), check 2 earns 2 lines, check 3 earns 1 line. Solving after that passes the level with no mark. There's no other penalty, and checks stay unlimited.
+- Lines go in a fixed order: one diagonal first, then the other diagonal. The vertical line is always the last one left.
+- A check is the canvas reaching the target and being judged. Cancelling, or letting the canvas drop back short of the target, doesn't count.
+- A level's checks are saved, so leaving the level or reloading doesn't reset them.
+- The mark is a UI element: the actual DM Sans (500) asterisk outline, extracted from the font as a path, not the world typeface. It's centered on its own bounds, not at the font's raised asterisk position.
+- A lost line's two opposite arms are hidden with wedge-shaped clips centered on those arms; the arms are never redrawn Since the wedges meet in a point, the clip also keeps a narrow bridge across the center along each remaining line, so a single line doesn't pinch where it crosses the hub.
+- At small sizes (Done button, badge) only the remaining lines show. At large size (the success circle) the full asterisk is drawn underneath at 25% opacity (`markPop.ghostOpacity` in `src/motion.js`), with the clipped mark on top, so the whole shape stays visible.
+- Mark logic and the outline live in `src/lib/marks.js`.
+- When a level is solved with a mark, the solved circle fills with the accent color and shows the mark (see `MOTION-SPEC.md`, Level complete).
+
+### World runs
+- A **world run** is one playthrough of all of a world's levels, from level 1. The run records the mark for each level.
+- A run's score is the total of its marks: 3 lines = 3 points, 2 lines = 2, 1 line = 1, no mark = 0.
+- A world keeps its **best complete run**. A finished run replaces it only if it scores higher; a tie keeps the existing one.
+- **Replaying:** choosing a completed world in the world menu starts a full replay from level 1 (if one of that world's levels is already on screen, it carries on from there instead). The replay goes through the world's levels in order. The existing badge stays until a replay is finished, and is replaced only if the new run scores higher. An unfinished replay doesn't affect it.
+- Runs, checks and best runs are saved locally alongside progress.
+
 ## Rewards
 
 - Completing a world earns a **badge: a custom-designed ampersand per world**. Until the art is ready, the badge is a placeholder (a UI-font ampersand knocked out of a solid circle, `badgeFace` in `src/lib/faces.js`).
+- The badge reflects the world's best complete run (see Scoring). If every level in it has the full 3-line asterisk, the badge is the accent version; otherwise it's the standard badge.
+- The badge shows the best run's marks. Placeholder: small marks spaced around the badge's edge in level order, from the top, clockwise, with an empty spot for each level that had no mark. The final badge art comes later.
 - The badge appears on the world complete screen and in the world menu.
 
 ## Visual design
@@ -157,7 +181,7 @@ For now:
 - What does the player see on a failed check — just a retry, or a hint about what's off?
 - Is the drop zone the right size? A drop counts as on the canvas by where the finger is, not where the letter is, which keeps removal predictable even when letters are huge. A letter dropped with the finger just below the canvas goes back to the tray even if it's visibly over the canvas. If that trips players up, let the zone reach a bit further below the canvas (`dropBottom` in `src/lib/geometry.js`).
 - Should a failed check reset all the letters back to the tray, as a penalty? Depends on how hard the levels turn out. For now, letters are kept.
-- Final badge art, world complete heading styling and the world number circle design
+- Final badge art (including how it shows the best run's marks, and the accent version), world complete heading styling and the world number circle design
 - Final color palette and accent
 - Motion language and references
 - Sound and haptics

@@ -109,9 +109,11 @@ original positions. Use Play test to try the draft in the gameplay screen.
 
 - `src/styles.css`: color tokens for light and dark mode.
 - `src/motion.js`: every motion and gesture value, including every timing,
-  distance and easing of the screen transitions (`transitions`). Switch the
-  success feedback between `'rays'` and `'shimmer'` there.
+  distance and easing of the screen transitions (`transitions`), including the
+  success feedback for level marks (accent fill, mark pop, holds).
 - `src/layout.js`: tray letter size, spacing and position.
+- `src/lib/marks.js`: level marks (the DM Sans asterisk losing lines), their
+  scores, and how they're drawn. `src/lib/progress.js` keeps world runs and each world's best run.
 - `src/lib/charsets.js`: the character sets a level's tray can offer.
 - `src/lib/animate.js`: tween and spring animation that can be interrupted.
 - `src/lib/director.js`: the screen transitions (level complete, world

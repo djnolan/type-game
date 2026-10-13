@@ -238,17 +238,43 @@ export class Director {
 
   // ---- Shared steps ------------------------------------------------------------
 
-  // Solved state, scale down, success feedback, hold.
-  async celebrate(board, g) {
-    const { tween, wait } = this.seq;
-    await tween(T.shrink.duration, (e) => board.set({ s: lerp(1, T.shrink.scale, e) }), T.shrink.ease);
-    if (T.feedback === 'shimmer') {
-      const band = board.front.querySelector('[data-shimmer]');
-      await tween(T.shimmer.duration, (e) => band?.setAttribute('x', lerp(-0.6 * g.D, 1.5 * g.D, e)), T.shimmer.ease);
-    } else {
-      await this.rays(board, g);
+  // Solved state, scale down, success feedback, hold. With no mark, a shimmer
+  // sweeps over the letters after the scale down. Solved with a mark, the
+  // shimmer sweeps as it scales down, locking the success in; after a beat the
+  // rays fire as the circle fills with the accent and the mark pops in, and the
+  // filled circle holds before the flip.
+  async celebrate(board, g, mark) {
+    const { tween, wait, after } = this.seq;
+    const band = board.front.querySelector('[data-shimmer]');
+    const y0 = board.y;
+    const drop = T.shrink.drop * g.k;
+    const shrink = () =>
+      tween(T.shrink.duration, (e) => board.set({ s: lerp(1, T.shrink.scale, e), y: y0 + drop * e }), T.shrink.ease);
+    const shimmer = () => tween(T.shimmer.duration, (e) => band?.setAttribute('x', lerp(-0.6 * g.D, 1.5 * g.D, e)), T.shimmer.ease);
+    if (!mark) {
+      await shrink();
+      await shimmer();
+      await wait(T.holdAfterFeedback);
+      return;
     }
-    await wait(T.holdAfterFeedback);
+    await Promise.all([shrink(), shimmer()]);
+    await wait(T.markBeat);
+    const fill = board.front.querySelector('[data-fill]');
+    const markEl = board.front.querySelector('[data-mark]');
+    const r = g.D / 2;
+    // Out to the corners, so a square board fills too; the board clips it.
+    const reach = r * Math.SQRT2;
+    const rays = this.rays(board, g);
+    // Awaited after the hold; this keeps a cancel before then from going unhandled.
+    rays.catch(() => {});
+    await Promise.all([
+      tween(T.fill.duration, (e) => fill?.setAttribute('r', reach * e), T.fill.ease),
+      after(T.markPop.delay, () =>
+        tween(T.markPop.duration, (e) => markEl?.setAttribute('transform', `translate(${r} ${r}) scale(${e})`), T.markPop.ease),
+      ),
+    ]);
+    await wait(T.holdAfterMark);
+    await rays;
   }
 
   // Short foreground strokes shoot out from just outside the circle. Each head
@@ -314,7 +340,7 @@ export class Director {
 
   // ---- 1. Level complete -------------------------------------------------------
 
-  // `from` and `to` are { world, level }. swap() switches the stage to the next
+  // `from` is { world, level, mark } and `to` is { world, level }. swap() switches the stage to the next
   // level; release() lets the header show the new progress.
   levelComplete({ from, to, progress, swap, release }) {
     return this.seq.run(async () => {
@@ -325,7 +351,7 @@ export class Director {
       const board = this.coin(g.D).faces(solvedFace({ ...from, D: g.D, shape })).set({ x: g.cx, y: g.targetY });
       this.hideParts('target', 'canvas', 'caption');
 
-      await this.celebrate(board, g);
+      await this.celebrate(board, g, from.mark);
 
       swap();
       this.hideParts('target', 'canvas', 'caption');
@@ -337,7 +363,7 @@ export class Director {
       let canvas;
       await Promise.all([
         tween(T.flip.duration, (e) => board.set({ ry: 180 * e }), T.flip.ease),
-        tween(T.flip.duration, (e) => board.set({ y: lerp(g.targetY, g2.targetY, e) }), T.flipScaleBack.ease),
+        tween(T.flip.duration, (e) => board.set({ y: lerp(g.targetY + T.shrink.drop * g.k, g2.targetY, e) }), T.flipScaleBack.ease),
         tween(T.flipScaleBack.duration, (e) => board.set({ s: lerp(T.shrink.scale, sEnd, e) }), T.flipScaleBack.ease),
         this.animateProgress(progress.from, progress.to, T.flip.duration * T.progressFill.fraction, T.progressFill.ease),
         this.canvasEnter(g2, canvasFace({ ...to, D: g2.D, shape })).then((c) => (canvas = c)),
@@ -349,7 +375,9 @@ export class Director {
 
   // ---- 3. World complete -------------------------------------------------------
 
-  worldComplete({ from, progress, release, onContinue }) {
+  // `from` is { world, level, mark }. `badge` is the marks of the world's best
+  // run, shown on its badge.
+  worldComplete({ from, badge, progress, release, onContinue }) {
     return this.seq.run(async () => {
       this.setMode('busy');
       const { tween, after } = this.seq;
@@ -358,12 +386,12 @@ export class Director {
       const board = this.coin(g.D).faces(solvedFace({ ...from, D: g.D, shape })).set({ x: g.cx, y: g.targetY });
       this.hideParts('target', 'canvas', 'caption');
 
-      await this.celebrate(board, g);
+      await this.celebrate(board, g, from.mark);
 
       // Travel down to the centre; the game's chrome leaves.
       const tr = T.worldTravel;
       await Promise.all([
-        tween(tr.duration, (e) => board.set({ y: lerp(g.targetY, g.centerY, e), s: lerp(T.shrink.scale, 1, e) }), tr.ease),
+        tween(tr.duration, (e) => board.set({ y: lerp(g.targetY + T.shrink.drop * g.k, g.centerY, e), s: lerp(T.shrink.scale, 1, e) }), tr.ease),
         tween(
           tr.duration * tr.chromeFraction,
           (e) => this.chrome({ header: 1 - e, tray: 0, done: 0 }),
@@ -376,7 +404,7 @@ export class Director {
 
       // Lift with a 360° flip to the badge.
       const badgeY = g.centerY - T.worldFlip.lift * g.k;
-      board.faces(null, badgeFace({ world: from.world, D: g.D }));
+      board.faces(null, badgeFace({ D: g.D, marks: badge }));
       await Promise.all([
         tween(T.worldFlip.duration, (e) => board.set({ ry: 360 * e }), T.worldFlip.ease),
         tween(T.worldFlip.duration, (e) => board.set({ y: lerp(g.centerY, badgeY, e) }), T.worldFlip.liftEase),
@@ -489,7 +517,8 @@ export class Director {
   // ---- 5. World menu --------------------------------------------------------------
 
   // `from` is { world, level, letters } on screen. `worlds` lists every world as
-  // { world, face: 'badge' | 'number' | 'locked', label, sub, selectable }.
+  // { world, face: 'badge' | 'number' | 'locked', marks, label, sub, selectable },
+  // where `marks` are the best run's marks shown on a badge.
   // `index` is the world on screen. onSelect(i) is called when a world is tapped.
   toMenu({ from, worlds, index, onSelect }) {
     return this.seq.run(async () => {
@@ -556,7 +585,7 @@ export class Director {
   }
 
   menuFace(w, D) {
-    if (w.face === 'badge') return badgeFace({ world: w.world, D });
+    if (w.face === 'badge') return badgeFace({ D, marks: w.marks });
     return numberFace({ n: w.world.world, D, locked: w.face === 'locked' });
   }
 

@@ -9,7 +9,8 @@ import { EDITOR_ENABLED } from '../lib/dev';
 import { Director } from '../lib/director';
 import { computeLayout, glyphExtent } from '../lib/geometry';
 import { getShape } from '../lib/shape';
-import { currentLevel, loadCurrentId, nextLevel, saveCurrentId, useProgress, worldStates } from '../lib/progress';
+import { markFor } from '../lib/marks';
+import { currentLevel, loadCurrentId, nextLevel, saveCurrentId, useProgress, useRuns, worldStates } from '../lib/progress';
 import { useSize } from '../lib/useSize';
 
 const doneIn = (w, completed) => w.levels.filter((l) => completed.has(l.id)).length;
@@ -17,6 +18,7 @@ const doneIn = (w, completed) => w.levels.filter((l) => completed.has(l.id)).len
 // `testLevel` plays one level outside of progress (the editor's Play test).
 export default function Game({ testLevel, onBack }) {
   const { completed, complete, reset } = useProgress();
+  const runs = useRuns();
   const [sizeRef, size] = useSize();
   // The level on screen. A level picked in world select is remembered across reloads.
   const [playingId, setPlayingIdState] = useState(() => {
@@ -29,6 +31,8 @@ export default function Game({ testLevel, onBack }) {
   // A level just passed is saved right away, but the header shows it as
   // completed only once the transition has filled its progress dot.
   const [heldId, setHeldId] = useState(null);
+  // Checks on the editor's Play test level, which isn't part of any run.
+  const [testChecks, setTestChecks] = useState(0);
 
   const shape = EDITOR_ENABLED ? getShape() : 'circle';
   const hostRef = useRef(null);
@@ -56,8 +60,18 @@ export default function Game({ testLevel, onBack }) {
   const world = level && getWorld(level.world);
   const activeWorld = level?.world ?? levels.at(-1)?.world;
   const shown = heldId ? new Set([...completed].filter((id) => id !== heldId)) : completed;
+  const checks = testLevel ? testChecks : level ? runs.checksFor(level) : 0;
+
+  function onCheck() {
+    if (testLevel) setTestChecks((n) => n + 1);
+    else runs.check(level);
+  }
 
   function play(id) {
+    // Starting a world's first level begins a new run of that world, unless
+    // it's the level already on screen (back from the menu, say).
+    const next = id && getLevel(id);
+    if (next && id !== playingId && getWorld(next.world).levels[0].id === id) runs.startRun(next.world);
     setLetters([]);
     setRound((r) => r + 1);
     setPlayingId(id);
@@ -69,14 +83,15 @@ export default function Game({ testLevel, onBack }) {
 
   function startOver() {
     reset();
+    runs.reset();
     setSelecting(false);
     play(levels[0]?.id ?? null);
   }
 
   // A correct match: level complete, or world complete on a world's last level.
   function onPass() {
-    const from = { world, level };
     if (testLevel) {
+      const from = { world, level, mark: markFor(testChecks) };
       director.current.levelComplete({
         from,
         to: from,
@@ -84,6 +99,7 @@ export default function Game({ testLevel, onBack }) {
         swap: () =>
           flushSync(() => {
             setLetters([]);
+            setTestChecks(0);
             setRound((r) => r + 1);
           }),
         release() {},
@@ -91,6 +107,7 @@ export default function Game({ testLevel, onBack }) {
       return;
     }
 
+    const from = { world, level, mark: runs.pass(level, world) };
     const wasDone = completed.has(level.id);
     const after = new Set(completed).add(level.id);
     complete(level.id);
@@ -98,11 +115,15 @@ export default function Game({ testLevel, onBack }) {
     const release = () => setHeldId(null);
     const total = world.levels.length;
     const progress = { from: doneIn(world, completed) / total, to: doneIn(world, after) / total };
-    const next = nextLevel(after, level.id);
+    // Within a world, play goes on to its next level, which keeps a replay
+    // going through levels already completed. After the last, it moves on.
+    const isLast = world.levels.at(-1).id === level.id;
+    const next = isLast ? nextLevel(after, level.id) : world.levels[world.levels.indexOf(level) + 1];
 
-    if (world.levels.at(-1).id === level.id) {
+    if (isLast) {
       director.current.worldComplete({
         from,
+        badge: runs.bestOf(world.world),
         progress,
         release,
         onContinue: () =>
@@ -146,6 +167,7 @@ export default function Game({ testLevel, onBack }) {
       return {
         world: w,
         face: isComplete ? 'badge' : selectable ? 'number' : 'locked',
+        marks: runs.bestOf(w.world),
         label: `World ${w.world} · ${w.name}`,
         sub,
         selectable,
@@ -192,6 +214,8 @@ export default function Game({ testLevel, onBack }) {
               target={level.letters}
               solution={level.letters}
               shape={shape}
+              checks={checks}
+              onCheck={onCheck}
               onPass={onPass}
             />
           )}

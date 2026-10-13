@@ -1,4 +1,6 @@
 import { insideShape, letterOrigin, puzzleScale } from './geometry';
+import { isPerfect, markSvg } from './marks';
+import { transitions as T } from '../motion';
 
 // SVG markup for the circles the transition layer flips and moves around
 // (lib/director.js). Each face is drawn D px across, to match the gameplay
@@ -41,19 +43,27 @@ export function targetFace({ world, level, D, shape }) {
   );
 }
 
-// A correct match: the player's accent letters fill the target's knockouts. The shimmer band (hidden off to the left until
-// animated) is clipped to the letter shapes.
-export function solvedFace({ world, level, D, shape }) {
+// A correct match: the player's accent letters fill the target's knockouts,
+// with a shimmer band (off to the left until animated) clipped to the letters.
+// Solved with a mark, it also holds an accent fill (radius 0 until animated)
+// and the mark on top, over a faint full asterisk, scaled to 0 until it pops in.
+export function solvedFace({ world, level, mark, D, shape }) {
   const id = `f${++uid}`;
   const letters = letterPaths(world, level, D);
+  const r = D / 2;
+  const marked = mark
+    ? `<g clip-path="url(#${id})" class="fill-accent"><circle data-fill cx="${r}" cy="${r}" r="0"/></g>` +
+      `<g data-mark transform="translate(${r} ${r}) scale(0)">${markSvg(mark, 0, 0, D * T.markPop.size, 'var(--bg)', { ghost: T.markPop.ghostOpacity })}</g>`
+    : '';
   return svg(
     D,
     `<defs><clipPath id="${id}">${board(D, shape)}</clipPath><clipPath id="${id}l">${letters}</clipPath>` +
-      `<linearGradient id="${id}g"><stop offset="0" stop-color="var(--bg)" stop-opacity="0"/>` +
-      `<stop offset=".5" stop-color="var(--bg)" stop-opacity=".75"/><stop offset="1" stop-color="var(--bg)" stop-opacity="0"/></linearGradient></defs>` +
+      `<linearGradient id="${id}g"><stop offset="0" stop-color="var(--shine)" stop-opacity="0"/>` +
+      `<stop offset=".5" stop-color="var(--shine)" stop-opacity="${T.shimmer.opacity}"/><stop offset="1" stop-color="var(--shine)" stop-opacity="0"/></linearGradient></defs>` +
       board(D, shape, 'class="fill-fg"') +
       `<g clip-path="url(#${id})" class="fill-accent">${letters}</g>` +
       `<g clip-path="url(#${id})"><g clip-path="url(#${id}l)"><rect data-shimmer x="${-D}" y="${-0.3 * D}" width="${0.32 * D}" height="${1.6 * D}" fill="url(#${id}g)" transform="skewX(-20)"/></g></g>` +
+      marked +
       board(D, shape, 'class="fill-none stroke-outline"'),
   );
 }
@@ -82,13 +92,24 @@ export function canvasFace({ world, level, letters = [], D, shape }) {
 }
 
 // A completed world's badge. Placeholder until the custom ampersand art per
-// world is ready: a UI-font ampersand knocked out of a solid circle.
-export function badgeFace({ D }) {
+// world is ready: a UI-font ampersand knocked out of a solid circle. `marks`
+// are the best run's marks (lib/marks.js), set small around the edge in level
+// order from the top, clockwise, showing only their remaining lines, with an
+// empty spot for a level with no mark. A run of full marks gets the accent badge.
+export function badgeFace({ D, marks = [] }) {
   const r = D / 2;
+  const n = marks.length;
+  const ring = marks
+    .map((m, i) => {
+      const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+      return markSvg(m, r + Math.cos(a) * r * 0.76, r + Math.sin(a) * r * 0.76, D * 0.065, 'var(--bg)');
+    })
+    .join('');
   return svg(
     D,
-    board(D, 'circle', 'class="fill-fg"') +
-      `<text x="${r}" y="${r}" text-anchor="middle" dominant-baseline="central" style="font:500 ${Math.round(D * 0.46)}px var(--ui-font);fill:var(--bg)">&amp;</text>`,
+    board(D, 'circle', `class="${isPerfect(marks) ? 'fill-accent' : 'fill-fg'}"`) +
+      `<text x="${r}" y="${r}" text-anchor="middle" dominant-baseline="central" style="font:500 ${Math.round(D * 0.46)}px var(--ui-font);fill:var(--bg)">&amp;</text>` +
+      ring,
   );
 }
 
