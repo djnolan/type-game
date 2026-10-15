@@ -91,7 +91,7 @@ In play order. All are free from Google Fonts (SIL OFL).
 | 1     | Oldstyle       | EB Garamond | SemiBold (600)                                     | 10   |
 | 2     | Modern/Didone  | Bodoni Moda | SemiBold (600), largest optical size (opsz 96)     | 12   |
 | 3     | Slab           | Zilla Slab  | SemiBold (600)                                     | 16   |
-| 4     | Grotesque      | Archivo     | SemiBold (600), expanded width (wdth 110)          | 20   |
+| 4     | Grotesque      | Archivo     | SemiBold (600), normal width (wdth 100)            | 20   |
 | 5     | Geometric      | Jost        | SemiBold (600)                                     | 24   |
 
 - Every world uses the same weight (600) so the change between worlds is the typeface and the puzzle difficulty, not the weight.

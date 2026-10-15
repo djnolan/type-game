@@ -77,7 +77,7 @@ values (`wght`, plus `opsz`, `wdth` etc. for variable fonts).
 | 1     | Oldstyle  | EB Garamond | SemiBold (wght 600)   | 10   |
 | 2     | Modern    | Bodoni Moda | wght 600, opsz 96     | 12   |
 | 3     | Slab      | Zilla Slab  | SemiBold (wght 600)   | 16   |
-| 4     | Grotesque | Archivo     | wght 600, wdth 110    | 20   |
+| 4     | Grotesque | Archivo     | wght 600, wdth 100    | 20   |
 | 5     | Geometric | Jost        | SemiBold (wght 600)   | 24   |
 
 Game letters are drawn from SVG path data, never from font files. Source fonts

@@ -36,7 +36,7 @@
     "typeface": {
       "family": "Archivo",
       "source": "fonts/archivo/archivo-latin-standard-normal.woff2",
-      "axes": { "wght": 600, "wdth": 110 }
+      "axes": { "wght": 600, "wdth": 100 }
     }
   },
   {
