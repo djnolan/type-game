@@ -9,6 +9,7 @@ import { letterVisible, regrid } from '../lib/geometry';
 import { useSize } from '../lib/useSize';
 import { getShape, setShape } from '../lib/shape';
 import { getTheme, setTheme } from '../lib/theme';
+import { WEIGHTS, getWeight, setWeight } from '../lib/weight';
 import '../editor.css';
 
 export function formatLevel({ id, world, scale, charset, letters }) {
@@ -182,6 +183,25 @@ export default function Editor() {
           <div className="wide">
             World
             <WorldSwitcher value={world.world} onChange={switchWorld} />
+          </div>
+          <div className="wide">
+            Weight <span className="hint">temporary trial, all worlds, reloads the page</span>
+            <div className="segmented" role="radiogroup" aria-label="Weight">
+              {WEIGHTS.map((w) => (
+                <button
+                  key={w}
+                  role="radio"
+                  aria-checked={getWeight() === w}
+                  onClick={() => {
+                    if (w === getWeight()) return;
+                    setWeight(w);
+                    location.reload();
+                  }}
+                >
+                  {w}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="wide">
             Characters
