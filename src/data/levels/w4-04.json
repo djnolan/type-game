@@ -1,13 +1,12 @@
 {
   "id": "w4-04",
   "world": 4,
-  "scale": 0.8,
-  "charset": "lower",
+  "scale": 1,
+  "charset": "mixed",
   "letters": [
-    { "char": "t", "x": 10, "y": 12 },
-    { "char": "y", "x": -1, "y": 14 },
-    { "char": "x", "x": 9, "y": 20 },
-    { "char": "r", "x": 7, "y": 24 },
-    { "char": "e", "x": -7, "y": 10 }
+    { "char": "R", "x": -5, "y": 14 },
+    { "char": "Z", "x": -2, "y": 24 },
+    { "char": "q", "x": 7, "y": 23 },
+    { "char": "i", "x": 0, "y": 28 }
   ]
 }

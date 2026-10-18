@@ -1,14 +1,13 @@
 {
   "id": "w5-04",
   "world": 5,
-  "scale": 0.9,
-  "charset": "lower",
+  "scale": 1,
+  "charset": "mixed",
   "letters": [
-    { "char": "q", "x": -1, "y": 19 },
-    { "char": "s", "x": 7, "y": 19 },
-    { "char": "z", "x": 0, "y": 13 },
-    { "char": "m", "x": 12, "y": 24 },
-    { "char": "u", "x": 12, "y": 8 },
-    { "char": "i", "x": 17, "y": 25 }
+    { "char": "q", "x": -10, "y": 17 },
+    { "char": "M", "x": 3, "y": 24 },
+    { "char": "u", "x": 5, "y": 7 },
+    { "char": "m", "x": 6, "y": 33 },
+    { "char": "i", "x": 16, "y": 30 }
   ]
 }
