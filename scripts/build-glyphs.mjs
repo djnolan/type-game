@@ -8,10 +8,6 @@
 //
 // Usage: npm run glyphs            (all worlds)
 //        npm run glyphs -- <world> (one world, e.g. `npm run glyphs -- 4`)
-//
-// Temporary weight trial: GLYPH_WEIGHT=700 npm run glyphs writes every world at
-// that weight to src/data/glyphs-<weight>/ instead (the editor's Weight switch
-// reads it). Static sources swap the weight in their file name.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,8 +16,7 @@ import opentype from 'opentype.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const worlds = JSON.parse(fs.readFileSync(path.join(root, 'src/data/worlds.json'), 'utf8'));
-const trialWeight = process.env.GLYPH_WEIGHT && Number(process.env.GLYPH_WEIGHT);
-const outDir = path.join(root, trialWeight ? `src/data/glyphs-${trialWeight}` : 'src/data/glyphs');
+const outDir = path.join(root, 'src/data/glyphs');
 const instanceDir = path.join(root, 'fonts/.instances');
 const python = process.env.PYTHON || 'python3';
 
@@ -52,12 +47,7 @@ function makeInstance(world, source, axes) {
 }
 
 function buildWorld({ world, name, typeface }) {
-  const { family } = typeface;
-  let { source, axes = {} } = typeface;
-  if (trialWeight) {
-    axes = { ...axes, wght: trialWeight };
-    source = source.replace(/-\d00-normal/, `-${trialWeight}-normal`);
-  }
+  const { family, source, axes = {} } = typeface;
   const file = path.join(root, source);
   if (!fs.existsSync(file)) {
     console.warn(`skip world ${world}: missing ${source} (see fonts/README.md)`);
@@ -129,7 +119,7 @@ if (!only) {
   for (const f of fs.readdirSync(outDir)) {
     if (f.endsWith('.json') && !keep.has(f)) {
       fs.rmSync(path.join(outDir, f));
-      console.log(`removed stale ${path.relative(root, path.join(outDir, f))}`);
+      console.log(`removed stale ${path.join('src/data/glyphs', f)}`);
     }
   }
 }

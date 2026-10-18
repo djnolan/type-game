@@ -1,16 +1,11 @@
 import worldList from '../data/worlds.json';
 import { CHARSETS, charsetOf } from './charsets';
-import { getWeight } from './weight';
 
 const glyphModules = import.meta.glob('../data/glyphs/*.json', { eager: true, import: 'default' });
-const trialModules = import.meta.glob('../data/glyphs-700/*.json', { eager: true, import: 'default' });
 const levelModules = import.meta.glob('../data/levels/*.json', { eager: true, import: 'default' });
 
 // Glyph data is generated per world by `npm run glyphs` (scripts/build-glyphs.mjs).
-// The 700 set is a temporary weight trial (lib/weight.js).
-const typefaces = Object.fromEntries(
-  Object.values(getWeight() === 700 ? trialModules : glyphModules).map((t) => [t.id, t]),
-);
+const typefaces = Object.fromEntries(Object.values(glyphModules).map((t) => [t.id, t]));
 
 export const worlds = worldList.map((w) => {
   const glyphs = typefaces[`world-${w.world}`];
