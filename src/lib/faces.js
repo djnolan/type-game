@@ -154,7 +154,7 @@ function dots(slots) {
       const y = fmt(-Math.cos(a) * DOT.at);
       return (
         `<circle cx="${x}" cy="${y}" r="${DOT.r}" class="fill-accent"/>` +
-        markSvg(m, x, y, DOT.mark, 'var(--bg)', { ghost: T.markPop.ghostOpacity })
+        markSvg(m, x, y, DOT.mark, 'var(--bg)')
       );
     })
     .join('');
