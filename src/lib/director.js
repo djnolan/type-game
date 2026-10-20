@@ -521,8 +521,9 @@ export class Director {
   // ---- 5. World menu --------------------------------------------------------------
 
   // `from` is { world, level, letters } on screen. `worlds` lists every world as
-  // { world, state: 'complete' | 'open' | 'locked', slots, label, action, selectable },
-  // where `state` and `slots` are for its circle (worldFace in lib/faces.js),
+  // { world, state: 'complete' | 'open' | 'locked', slots, perfect, label, action, selectable },
+  // where `state`, `slots` and `perfect` (hang the ribbon) are for its circle
+  // (worldFace in lib/faces.js),
   // `label` is the category name and `action` the button text (Begin,
   // Continue or Replay).
   // `index` is the world on screen. onSelect(i) is called when a world is tapped.
@@ -604,7 +605,7 @@ export class Director {
   }
 
   menuFace(w, D) {
-    return worldFace({ n: w.world.world, D, state: w.state, slots: w.slots, ribbon: true });
+    return worldFace({ n: w.world.world, D, state: w.state, slots: w.slots, ribbon: w.perfect });
   }
 
   layoutMenu(off = []) {

@@ -9,7 +9,7 @@ import { EDITOR_ENABLED } from '../lib/dev';
 import { Director } from '../lib/director';
 import { computeLayout, glyphExtent } from '../lib/geometry';
 import { getShape } from '../lib/shape';
-import { markFor } from '../lib/marks';
+import { isPerfect, markFor } from '../lib/marks';
 import { currentLevel, loadCurrentId, nextLevel, saveCurrentId, useProgress, useRuns, worldStates } from '../lib/progress';
 import { useSize } from '../lib/useSize';
 
@@ -160,12 +160,19 @@ export default function Game({ testLevel, onBack }) {
       const total = w.levels.length;
       const isComplete = total > 0 && doneIn(w, completed) === total;
       const selectable = total > 0 && (isComplete || w.world === current || w.world === level.world);
+      // A world completed with no finished run (a world select jump) counts
+      // every level as passed with no mark.
+      const kept = runs.bestOf(w.world);
+      const best = kept.length ? kept : w.levels.map(() => 0);
+      const run = runs.slotsOf(w);
       const action = isComplete ? 'Replay' : doneIn(w, completed) > 0 ? 'Continue' : 'Begin';
       return {
         world: w,
-        // A completed world shows its best run, even while it's being replayed.
+        // A completed world keeps its completed inside. Its ring shows the best
+        // run until a replay passes its first level, then that run.
         state: isComplete ? 'complete' : selectable ? 'open' : 'locked',
-        slots: isComplete ? runs.bestOf(w.world) : runs.slotsOf(w),
+        slots: isComplete && !run.some((m) => m != null) ? best : run,
+        perfect: isComplete && isPerfect(best),
         label: w.name,
         action,
         selectable,

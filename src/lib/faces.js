@@ -1,5 +1,5 @@
 import { insideShape, letterOrigin, puzzleScale } from './geometry';
-import { isPerfect, markSvg } from './marks';
+import { markSvg } from './marks';
 import { transitions as T } from '../motion';
 import badgeArt from '../data/badges.json';
 
@@ -98,30 +98,28 @@ export function canvasFace({ world, level, letters = [], D, shape }) {
 // Archivo Narrow (both outlines in data/badges.json, in a space where the
 // circle is centred on 0 0 with radius 1).
 //
-// `state` is one of:
+// `state` sets the inside of the circle:
 // - 'locked': dashed outline, faint ampersand and faint number.
-// - 'open': paper circle, faint ampersand, accent number. Levels passed in the
-//   current run show as an accent arc around the edge and asterisk dots.
-// - 'complete': ink circle with a paper ampersand over an accent number, a full
-//   accent ring and the best run's asterisk dots. A perfect run also gets the
-//   ribbon behind the circle when `ribbon` is set (the world complete screen
-//   drops its ribbon in separately).
+// - 'open': paper circle, faint ampersand, accent number.
+// - 'complete': ink circle with a paper ampersand over an accent number.
 //
-// `slots` has one entry per level, in order: the mark the level earned
-// (lib/marks.js), or null if it hasn't been passed. Each level has a spot on
-// the edge, clockwise from the top; a level with a mark gets an accent dot with
-// the mark's asterisk in it.
+// `slots` sets the ring, and has one entry per level, in order: the mark the
+// level earned (lib/marks.js), or null if it hasn't been passed. The accent arc
+// grows clockwise from the top by one level's share for each level passed, and
+// a level with a mark gets an accent dot with the mark's asterisk at the end of
+// its share. A level passed with no mark leaves its spot empty.
+//
+// `ribbon` hangs the ribbon behind the circle (for a perfect run; the world
+// complete screen drops its ribbon in separately).
 
 const RING = { outer: 1, inner: 0.94 };
 const DOT = { at: 0.966, r: 0.1286, mark: 0.1237 };
 export const RIBBON = { half: 0.1778, top: 0.769, bottom: 1.48, notch: 0.0444 };
 const FAINT = { amp: 0.15, number: 0.25, outline: 0.5 };
 
-// Where the open state's arc ends, as a fraction of the way round from the top:
-// at the spot of the last level passed in the run.
+// How far round from the top the arc reaches: a share per level passed.
 export function arcFraction(slots) {
-  const last = slots.findLastIndex((m) => m != null);
-  return last > 0 ? last / slots.length : 0;
+  return slots.length ? slots.filter((m) => m != null).length / slots.length : 0;
 }
 
 const fmt = (v) => +v.toFixed(4);
@@ -151,7 +149,7 @@ function dots(slots) {
   return slots
     .map((m, i) => {
       if (!m) return '';
-      const a = (i / slots.length) * Math.PI * 2;
+      const a = ((i + 1) / slots.length) * Math.PI * 2;
       const x = fmt(Math.sin(a) * DOT.at);
       const y = fmt(-Math.cos(a) * DOT.at);
       return (
@@ -180,16 +178,16 @@ export function worldFace({ n, D, state, slots = [], ribbon = false }) {
     state === 'locked'
       ? `<circle cx="${r}" cy="${r}" r="${r}" fill="none" stroke-linecap="round" stroke-dasharray="${fmt(D * 0.0178)} ${fmt(D * 0.0356)}" opacity="${FAINT.outline}" style="stroke:var(--fg);stroke-width:var(--outline-width)"/>`
       : board(D, 'circle', 'class="fill-none stroke-outline"');
-  const fraction = complete ? 1 : state === 'open' ? arcFraction(slots) : 0;
+  const fraction = state === 'locked' ? 0 : arcFraction(slots);
   // Its outer edge reaches 1px past the circle, over the outline.
   const ring = fraction > 0 ? arc(fraction, RING.outer + 1 / r) : '';
   const marks = state === 'locked' ? '' : dots(slots);
-  const showRibbon = ribbon && complete && isPerfect(slots);
+
   const unit = (body) => `<g transform="translate(${r} ${r}) scale(${r})">${body}</g>`;
   return svg(
     D,
     `<defs><clipPath id="${id}"><circle r="1"/></clipPath></defs>` +
-      (showRibbon ? unit(`<path d="${ribbonPath()}" class="fill-accent"/>`) : '') +
+      (ribbon ? unit(`<path d="${ribbonPath()}" class="fill-accent"/>`) : '') +
       board(D, 'circle', `class="${complete ? 'fill-fg' : 'fill-bg'}"`) +
       unit(`<g clip-path="url(#${id})">${inside}</g>`) +
       outline +
