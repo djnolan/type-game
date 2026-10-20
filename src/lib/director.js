@@ -1,7 +1,8 @@
 import { ringDash } from '../components/ProgressIndicator';
 import { transitions as T } from '../motion';
 import { easeOutBack, easeOutCubic } from './easing';
-import { badgeFace, canvasFace, numberFace, solvedFace, targetFace } from './faces';
+import { RIBBON, canvasFace, ribbonPath, solvedFace, targetFace, worldFace } from './faces';
+import { isPerfect } from './marks';
 import { createSequencer } from './sequence';
 
 // Plays the screen transitions: level complete, world complete, continue to
@@ -404,26 +405,27 @@ export class Director {
 
       // Lift with a 360° flip to the badge.
       const badgeY = g.centerY - T.worldFlip.lift * g.k;
-      board.faces(null, badgeFace({ D: g.D, marks: badge }));
+      board.faces(null, worldFace({ n: from.world.world, D: g.D, state: 'complete', slots: badge }));
       await Promise.all([
         tween(T.worldFlip.duration, (e) => board.set({ ry: 360 * e }), T.worldFlip.ease),
         tween(T.worldFlip.duration, (e) => board.set({ y: lerp(g.centerY, badgeY, e) }), T.worldFlip.liftEase),
       ]);
       board.settle();
 
-      // Dip, then the ribbon drops out from behind as the badge springs back.
+      // Dip, then, for a perfect run, the ribbon drops out from behind as the
+      // badge springs back.
       const r = g.D / 2;
-      const rib = { w: 44 * g.q, h: 100 * g.q };
+      const rib = { w: 2 * RIBBON.half * r, h: (RIBBON.bottom - RIBBON.top) * r };
       const ribIn = badgeY + r - 14 * g.q - rib.h / 2;
-      const ribOut = badgeY + r - T.ribbonPop.tucked * g.q + rib.h / 2;
-      const ribbon = this.node(this.ribbonEl(from.world.world, rib), rib.w, rib.h, 4).set({ x: g.cx, y: ribIn });
+      const ribOut = badgeY + RIBBON.top * r + rib.h / 2;
+      const ribbon = isPerfect(badge) ? this.node(this.ribbonEl(rib), rib.w, rib.h, 4).set({ x: g.cx, y: ribIn }) : null;
       const headingY = badgeY - r - 64 * g.q;
       const heading = this.node(div('ml-heading', `World ${from.world.world} complete`), g.W, 40).set({ x: g.W / 2, y: headingY, o: 0 });
       const button = document.createElement('button');
       button.className = 'pill ml-continue';
       button.textContent = 'Continue';
       button.addEventListener('click', () => this.mode === 'worldDone' && onContinue());
-      const contY = Math.min(ribOut + rib.h / 2 + 96 * g.q, g.H - 26 - 40);
+      const contY = Math.min(badgeY + RIBBON.bottom * r + 96 * g.q, g.H - 26 - 40);
       const cont = this.node(button, 200, 52).set({ x: g.W / 2, y: contY, o: 0 });
       this.world = { board, ribbon, heading, cont, badgeY, g };
 
@@ -433,7 +435,7 @@ export class Director {
       const rise = h.rise * g.k;
       await Promise.all([
         tween(T.dipReturn.duration, (e) => board.set({ y: badgeY + dip * (1 - e) }), T.dipReturn.ease),
-        tween(T.ribbonPop.duration, (e) => ribbon.set({ y: lerp(ribIn, ribOut, e) }), T.ribbonPop.ease),
+        ribbon && tween(T.ribbonPop.duration, (e) => ribbon.set({ y: lerp(ribIn, ribOut, e) }), T.ribbonPop.ease),
         after(T.ribbonPop.duration * h.startFraction, () =>
           tween(h.duration, (e) => heading.set({ y: headingY + rise * (1 - e), o: e }), h.ease),
         ),
@@ -446,18 +448,20 @@ export class Director {
     });
   }
 
-  ribbonEl(n, { w, h }) {
+  // The ribbon from the badge art, drawn on its own so it can drop out from
+  // behind the badge.
+  ribbonEl({ w, h }) {
     const el = document.createElement('div');
     el.innerHTML =
-      `<svg width="${w}" height="${h}" viewBox="0 0 44 100" aria-hidden="true">` +
-      `<path d="M0 0H44V100L22 84 0 100Z" class="fill-accent"/>` +
-      `<text x="22" y="58" text-anchor="middle" dominant-baseline="central" style="font:500 20px var(--ui-font);fill:var(--bg)">${Number(n)}</text></svg>`;
+      `<svg width="${w}" height="${h}" viewBox="${-RIBBON.half} ${RIBBON.top} ${2 * RIBBON.half} ${RIBBON.bottom - RIBBON.top}" aria-hidden="true">` +
+      `<path d="${ribbonPath()}" class="fill-accent"/></svg>`;
     return el;
   }
 
   // ---- 4. Continue to the next world --------------------------------------------
 
-  // `to` is { world, level }, or null when there's nothing left to play.
+  // `to` is { world, level, slots }, or null when there's nothing left to play.
+  // `slots` is the world's current run, for its circle.
   nextWorld({ to, swap }) {
     return this.seq.run(async () => {
       if (this.mode !== 'worldDone' || !this.world) return;
@@ -469,7 +473,7 @@ export class Director {
       const so = T.swipeOut;
       const distance = so.distance * g.k;
       const g2 = to ? this.geo(to.world) : null;
-      const num = to && this.coin(g2.D).faces(numberFace({ n: to.world.world, D: g2.D })).set({ x: g.cx + distance, y: badgeY });
+      const num = to && this.coin(g2.D).faces(worldFace({ n: to.world.world, D: g2.D, state: 'open', slots: to.slots })).set({ x: g.cx + distance, y: badgeY });
 
       await Promise.all([
         tween(T.continueOut, (e) => cont.set({ o: 1 - e })),
@@ -478,7 +482,7 @@ export class Director {
           (e) => {
             const dx = -distance * e;
             board.set({ dx });
-            ribbon.set({ dx });
+            ribbon?.set({ dx });
             heading.set({ dx, o: 1 - e });
           },
           so.ease,
@@ -488,7 +492,7 @@ export class Director {
             tween(T.swipeIn.duration, (e) => num.set({ x: lerp(g.cx + distance, g.cx, e) }), T.swipeIn.ease),
           ),
       ]);
-      this.drop(board, ribbon, heading, cont);
+      this.drop(...[board, ribbon, heading, cont].filter(Boolean));
 
       swap();
       if (!to) {
@@ -517,9 +521,10 @@ export class Director {
   // ---- 5. World menu --------------------------------------------------------------
 
   // `from` is { world, level, letters } on screen. `worlds` lists every world as
-  // { world, face: 'badge' | 'number' | 'locked', marks, label, action, selectable },
-  // where `label` is the category name, `action` the button text (Begin,
-  // Continue or Replay) and `marks` the best run's marks shown on a badge.
+  // { world, state: 'complete' | 'open' | 'locked', slots, label, action, selectable },
+  // where `state` and `slots` are for its circle (worldFace in lib/faces.js),
+  // `label` is the category name and `action` the button text (Begin,
+  // Continue or Replay).
   // `index` is the world on screen. onSelect(i) is called when a world is tapped.
   toMenu({ from, worlds, index, onSelect }) {
     return this.seq.run(async () => {
@@ -558,7 +563,7 @@ export class Director {
         if (m.worlds[i].selectable) m.onSelect(i);
       });
       menu.button = this.node(button, 200, 52);
-      const ribbonDrop = (100 - T.ribbonPop.tucked) * g.q * ms;
+      const ribbonDrop = (RIBBON.bottom - 1) * r;
       const buttonY = Math.min(menuY + r + ribbonDrop + 48 * g.k, g.H - 26 - 40);
       const nb = T.menuOut.neighbours;
       const off = worlds.map((_, i) => (i < index ? -1 : 1) * nb.distance * g.k);
@@ -599,8 +604,7 @@ export class Director {
   }
 
   menuFace(w, D) {
-    if (w.face === 'badge') return badgeFace({ D, marks: w.marks });
-    return numberFace({ n: w.world.world, D, locked: w.face === 'locked' });
+    return worldFace({ n: w.world.world, D, state: w.state, slots: w.slots, ribbon: true });
   }
 
   layoutMenu(off = []) {

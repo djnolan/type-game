@@ -128,7 +128,7 @@ export default function Game({ testLevel, onBack }) {
         release,
         onContinue: () =>
           director.current.nextWorld({
-            to: next && { world: getWorld(next.world), level: next },
+            to: next && { world: getWorld(next.world), level: next, slots: runs.slotsOf(getWorld(next.world)) },
             swap: swapTo(next?.id ?? null),
           }),
       });
@@ -163,8 +163,9 @@ export default function Game({ testLevel, onBack }) {
       const action = isComplete ? 'Replay' : doneIn(w, completed) > 0 ? 'Continue' : 'Begin';
       return {
         world: w,
-        face: isComplete ? 'badge' : selectable ? 'number' : 'locked',
-        marks: runs.bestOf(w.world),
+        // A completed world shows its best run, even while it's being replayed.
+        state: isComplete ? 'complete' : selectable ? 'open' : 'locked',
+        slots: isComplete ? runs.bestOf(w.world) : runs.slotsOf(w),
         label: w.name,
         action,
         selectable,

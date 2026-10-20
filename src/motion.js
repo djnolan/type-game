@@ -81,7 +81,7 @@ export const transitions = {
   worldFlip: { duration: 1000, ease: easeInOutBack(1.25), lift: 28, liftEase: easeInOutCubic },
   dip: { duration: 150, depth: 14, ease: easeInCubic },
   dipReturn: { duration: 350, ease: easeOutBack(2) },
-  ribbonPop: { duration: 440, ease: easeOutBack(1.8), tucked: 30 },
+  ribbonPop: { duration: 440, ease: easeOutBack(1.8) },
   headingIn: { duration: 320, rise: 12, ease: easeOutCubic, startFraction: 0.4 },
   continueDelay: 240,
 

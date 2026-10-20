@@ -176,5 +176,12 @@ export function useRuns() {
   // The marks of a world's best finished run, or [] if it has none.
   const bestOf = (world) => ref.current.best[world] ?? [];
 
-  return { bestOf, checksFor, check, pass, startRun, reset };
+  // The current run of a world (from data), one entry per level: the mark it
+  // earned, or null if it hasn't been passed in this run.
+  const slotsOf = (world) => {
+    const { marks } = runOf(world.world);
+    return world.levels.map((l) => (l.id in marks ? marks[l.id] : null));
+  };
+
+  return { bestOf, slotsOf, checksFor, check, pass, startRun, reset };
 }
