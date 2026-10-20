@@ -1,0 +1,10 @@
+/* The UI typeface, in one place. To try another, swap the two imports and the
+   family name below (e.g. @fontsource/archivo + 'Archivo'). The level-mark
+   asterisk is a fixed DM Sans outline in src/lib/marks.js, so it isn't
+   affected. */
+@import '@fontsource/archivo-narrow/400.css';
+@import '@fontsource/archivo-narrow/500.css';
+
+:root {
+  --ui-font: 'Archivo Narrow', system-ui, sans-serif;
+}

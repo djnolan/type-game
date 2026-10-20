@@ -1,12 +1,13 @@
 {
   "id": "w5-01",
   "world": 5,
-  "scale": 0.9,
-  "charset": "numerals",
+  "scale": 1,
+  "charset": "upper",
   "letters": [
-    { "char": "2", "x": -2, "y": 27 },
-    { "char": "8", "x": 4, "y": 21 },
-    { "char": "3", "x": 8, "y": 28 },
-    { "char": "4", "x": 10, "y": 9 }
+    { "char": "Z", "x": 6, "y": 24 },
+    { "char": "V", "x": -7, "y": 10 },
+    { "char": "A", "x": -1, "y": 33 },
+    { "char": "B", "x": -12, "y": 26 },
+    { "char": "N", "x": 13, "y": 29 }
   ]
 }

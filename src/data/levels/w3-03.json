@@ -2,11 +2,10 @@
   "id": "w3-03",
   "world": 3,
   "scale": 1,
-  "charset": "numerals",
+  "charset": "mixed",
   "letters": [
-    { "char": "8", "x": -4, "y": 16 },
-    { "char": "7", "x": 3, "y": 9 },
-    { "char": "9", "x": 8, "y": 7 },
-    { "char": "1", "x": 8, "y": 21 }
+    { "char": "t", "x": 9, "y": 9 },
+    { "char": "C", "x": 3, "y": 18 },
+    { "char": "a", "x": -4, "y": 17 }
   ]
 }

@@ -160,16 +160,13 @@ export default function Game({ testLevel, onBack }) {
       const total = w.levels.length;
       const isComplete = total > 0 && doneIn(w, completed) === total;
       const selectable = total > 0 && (isComplete || w.world === current || w.world === level.world);
-      const family = w.typeface.family;
-      let sub = `${family} · Locked`;
-      if (isComplete) sub = `${family} · Complete`;
-      else if (selectable) sub = `${family} · Level ${w.levels.indexOf(entryLevel(w)) + 1} of ${total}`;
+      const action = isComplete ? 'Replay' : doneIn(w, completed) > 0 ? 'Continue' : 'Begin';
       return {
         world: w,
         face: isComplete ? 'badge' : selectable ? 'number' : 'locked',
         marks: runs.bestOf(w.world),
-        label: `World ${w.world} · ${w.name}`,
-        sub,
+        label: w.name,
+        action,
         selectable,
       };
     });

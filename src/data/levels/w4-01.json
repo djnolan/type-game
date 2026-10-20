@@ -1,11 +1,10 @@
 {
   "id": "w4-01",
   "world": 4,
-  "scale": 0.8,
-  "charset": "lower",
+  "scale": 1,
+  "charset": "upper",
   "letters": [
-    { "char": "g", "x": 2, "y": 18 },
-    { "char": "h", "x": 9, "y": 20 },
-    { "char": "a", "x": -3, "y": 12 }
+    { "char": "M", "x": 0, "y": 20 },
+    { "char": "E", "x": -1, "y": 20 }
   ]
 }

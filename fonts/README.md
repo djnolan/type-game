@@ -28,7 +28,7 @@ for t in fontsource-*.tgz; do mkdir -p "${t%.tgz}" && tar xzf "$t" -C "${t%.tgz}
 mkdir -p fonts/eb-garamond fonts/bodoni-moda fonts/zilla-slab fonts/archivo fonts/jost
 cp fontsource-variable-eb-garamond-*/package/files/eb-garamond-latin-wght-normal.woff2 fonts/eb-garamond/
 cp fontsource-variable-bodoni-moda-*/package/files/bodoni-moda-latin-standard-normal.woff2 fonts/bodoni-moda/
-cp fontsource-zilla-slab-*/package/files/zilla-slab-latin-700-normal.woff2 fonts/zilla-slab/
+cp fontsource-zilla-slab-*/package/files/zilla-slab-latin-600-normal.woff2 fonts/zilla-slab/
 cp fontsource-variable-archivo-*/package/files/archivo-latin-standard-normal.woff2 fonts/archivo/
 cp fontsource-variable-jost-*/package/files/jost-latin-wght-normal.woff2 fonts/jost/
 rm -rf fontsource-*

@@ -5,7 +5,7 @@
   "charset": "lower",
   "letters": [
     { "char": "m", "x": -1, "y": 22 },
-    { "char": "v", "x": 3, "y": 14 },
-    { "char": "e", "x": -5, "y": 13 }
+    { "char": "e", "x": -5, "y": 14 },
+    { "char": "v", "x": 3, "y": 15 }
   ]
 }

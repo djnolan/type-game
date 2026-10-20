@@ -1,11 +1,10 @@
 {
   "id": "w1-01",
   "world": 1,
-  "scale": 0.7,
-  "charset": "lower",
+  "scale": 1,
+  "charset": "upper",
   "letters": [
-    { "char": "j", "x": 7, "y": 7 },
-    { "char": "r", "x": 5, "y": 11 },
-    { "char": "w", "x": -1, "y": 4 }
+    { "char": "B", "x": 2, "y": 10 },
+    { "char": "H", "x": -6, "y": 10 }
   ]
 }
