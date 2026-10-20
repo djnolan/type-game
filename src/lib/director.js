@@ -517,8 +517,9 @@ export class Director {
   // ---- 5. World menu --------------------------------------------------------------
 
   // `from` is { world, level, letters } on screen. `worlds` lists every world as
-  // { world, face: 'badge' | 'number' | 'locked', marks, label, sub, selectable },
-  // where `marks` are the best run's marks shown on a badge.
+  // { world, face: 'badge' | 'number' | 'locked', marks, label, action, selectable },
+  // where `label` is the category name, `action` the button text (Begin,
+  // Continue or Replay) and `marks` the best run's marks shown on a badge.
   // `index` is the world on screen. onSelect(i) is called when a world is tapped.
   toMenu({ from, worlds, index, onSelect }) {
     return this.seq.run(async () => {
@@ -541,16 +542,29 @@ export class Director {
       this.hideParts('target', 'canvas', 'caption');
 
       menu.coins = worlds.map((w) => this.coin(g.D).faces(this.menuFace(w, g.D)).set({ y: menuY, s: ms, o: 0 }));
-      menu.title = this.node(div('ml-title', 'Worlds'), g.W, 48).set({ x: g.W / 2, y: 24, o: 0 });
-      const label = div('ml-label');
-      label.append(div('ml-label-name'), div('ml-label-sub'));
-      label.setAttribute('aria-live', 'polite');
-      menu.label = this.node(label, g.W, 56);
-      const labelY = menuY + (g.D / 2) * ms + 46 * g.k;
+      // The world's category name sits above the circle, and a pill button below
+      // it enters the world. The button sits low enough to clear the ribbon a
+      // perfect badge will hang below the circle.
+      const r = (g.D / 2) * ms;
+      menu.label = this.node(div('ml-heading'), g.W, 40);
+      menu.label.el.setAttribute('aria-live', 'polite');
+      const labelY = menuY - r - 40 * g.k;
+      const button = document.createElement('button');
+      button.className = 'pill ml-continue';
+      button.addEventListener('click', () => {
+        const m = this.menu;
+        if (this.mode !== 'menu' || !m) return;
+        const i = clamp(Math.round(m.scroll), 0, m.worlds.length - 1);
+        if (m.worlds[i].selectable) m.onSelect(i);
+      });
+      menu.button = this.node(button, 200, 52);
+      const ribbonDrop = (100 - T.ribbonPop.tucked) * g.q * ms;
+      const buttonY = Math.min(menuY + r + ribbonDrop + 48 * g.k, g.H - 26 - 40);
       const nb = T.menuOut.neighbours;
       const off = worlds.map((_, i) => (i < index ? -1 : 1) * nb.distance * g.k);
       this.layoutMenu(off);
       menu.label.set({ x: g.W / 2, y: labelY, o: 0 });
+      menu.button.set({ x: g.W / 2, y: buttonY, o: 0 });
 
       const mo = T.menuOut;
       const dropTo = g.H + g.D / 2 + 40;
@@ -569,8 +583,8 @@ export class Director {
             (e) => {
               this.layoutMenu(off.map((o) => o * (1 - e)));
               menu.coins.forEach((c, i) => i !== index && c.set({ o: e }));
-              menu.title.set({ o: e });
               menu.label.set({ y: labelY + nb.labelRise * g.k * (1 - e), o: e });
+              menu.button.set({ y: buttonY + nb.labelRise * g.k * (1 - e), o: e });
             },
             nb.ease,
           ),
@@ -593,9 +607,12 @@ export class Director {
     const m = this.menu;
     m.coins.forEach((c, i) => c.set({ x: m.g.W / 2 + (i - m.scroll) * m.spacing + (off[i] || 0) }));
     const i = clamp(Math.round(m.scroll), 0, m.worlds.length - 1);
-    const [name, sub] = m.label.el.children;
-    name.textContent = m.worlds[i].label;
-    sub.textContent = m.worlds[i].sub;
+    const w = m.worlds[i];
+    m.label.el.textContent = w.label;
+    // Locked worlds have no button.
+    const btn = m.button.el;
+    btn.textContent = w.action ?? '';
+    btn.style.visibility = w.selectable ? '' : 'hidden';
   }
 
   snapMenu(to) {
@@ -618,7 +635,7 @@ export class Director {
   // Swipe to scroll; on release, snap to the nearest world, allowing for the
   // swipe's speed. Tap a neighbour to snap to it, or the centred world to enter it.
   pointerDown(e) {
-    if (this.mode !== 'menu') return;
+    if (this.mode !== 'menu' || e.target.closest?.('button')) return;
     const p = this.local(e);
     this.drag = { id: e.pointerId, p, s0: this.menu.scroll, moved: 0, t: e.timeStamp, v: 0, lastX: p.x };
     this.menuSnapId = (this.menuSnapId ?? 0) + 1;
@@ -710,8 +727,8 @@ export class Director {
           sel.duration,
           (e) => {
             m.coins.forEach((c, j) => j !== index && c.set({ dx: (j < index ? -dist : dist) * e, o: 1 - e }));
-            m.title.set({ o: 1 - e });
             m.label.set({ o: 1 - e });
+            m.button.set({ o: 1 - e });
           },
           sel.ease,
         ),
@@ -720,7 +737,7 @@ export class Director {
         this.headerIn(rf.duration),
         this.canvasEnter(g2, canvasFace({ ...to, D: g2.D, shape })).then((c) => (canvas = c)),
       ]);
-      this.drop(...m.coins, m.title, m.label);
+      this.drop(...m.coins, m.label, m.button);
       this.menu = null;
       await this.finishInGame(board, canvas);
     });
