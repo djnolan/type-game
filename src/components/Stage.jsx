@@ -51,11 +51,11 @@ function Glyph({ glyph, ox, oy, s, ...rest }) {
   return <path d={glyph.d} transform={`translate(${ox} ${oy}) scale(${s})`} {...rest} />;
 }
 
-// The mark the next check would earn, in ink on Done's accent fill, like the
-// marks on the success screen and the menu badges. The markup is built from
+// The mark the next check would earn, in paper on Done's accent fill, as the
+// marks show on the success screen and the menu badges. The markup is built from
 // fixed path data and numbers only.
 function DoneMark({ mark, cx, cy }) {
-  const html = useMemo(() => markSvg(mark, cx, cy, DONE_MARK, 'var(--fg)'), [mark, cx, cy]);
+  const html = useMemo(() => markSvg(mark, cx, cy, DONE_MARK, 'var(--bg)'), [mark, cx, cy]);
   return <g dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
@@ -618,7 +618,7 @@ export default function Stage({
           <g
             data-action="done"
             className={`fades ${checking ? 'hidden' : ''}`}
-            style={{ cursor: 'pointer', opacity: letters.length || checking ? undefined : 0.35 }}
+            style={{ cursor: 'pointer' }}
             role="button"
             aria-label="Done"
           >
