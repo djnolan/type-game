@@ -106,6 +106,10 @@ export function canvasFace({ world, level, letters = [], D, shape }) {
 //   `slots`: a level with a mark gets an accent dot with the mark's asterisk,
 //   at the end of its level's share; a level with no mark leaves its spot empty.
 //
+// `number` draws the world's number in the accent over the ampersand, from
+// the badge art. It's used only on the swap into the next world, so the player
+// sees which world is coming; the menu has its headings instead.
+//
 // `slots` has one entry per level, in order: the mark the level earned
 // (lib/marks.js), or null if it hasn't been passed. `ribbon` hangs the ribbon
 // behind the circle (for a perfect run; the world complete screen drops its
@@ -140,13 +144,20 @@ function arc(fraction, outer = RING.outer) {
   return `<path d="M0 ${-rc}A${rc} ${rc} 0 ${fraction > 0.5 ? 1 : 0} 1 ${end}" fill="none" stroke-width="${w}" style="stroke:var(--accent)"/>`;
 }
 
-function dots(slots) {
+// With `pop`, each dot is scaled to 0 about its centre and marked data-dot,
+// so the world complete screen can pop them in one at a time.
+function dots(slots, pop = false) {
   return slots
     .map((m, i) => {
       if (!m) return '';
       const a = ((i + 1) / slots.length) * Math.PI * 2;
       const x = fmt(Math.sin(a) * DOT.at);
       const y = fmt(-Math.cos(a) * DOT.at);
+      if (pop)
+        return (
+          `<g data-dot data-x="${x}" data-y="${y}" transform="translate(${x} ${y}) scale(0)">` +
+          `<circle r="${DOT.r}" class="fill-accent"/>${markSvg(m, 0, 0, DOT.mark, 'var(--bg)')}</g>`
+        );
       return (
         `<circle cx="${x}" cy="${y}" r="${DOT.r}" class="fill-accent"/>` +
         markSvg(m, x, y, DOT.mark, 'var(--bg)')
@@ -160,7 +171,14 @@ export function ribbonPath() {
   return `M${-h} ${top}H${h}V${b}L${fmt(h / 2)} ${fmt(b - notch)}L0 ${b}L${fmt(-h / 2)} ${fmt(b - notch)}L${-h} ${b}Z`;
 }
 
-export function worldFace({ n, D, state, slots = [], ribbon = false }) {
+// The number, from the badge art (only on the swap into the next world).
+function numberArt(n, attrs) {
+  const art = badgeArt[n]?.number;
+  if (art) return artPath(art, attrs);
+  return `<text x="0" y="0" text-anchor="middle" dominant-baseline="central" style="font:500 0.9px var(--ui-font)" ${attrs}>${Number(n)}</text>`;
+}
+
+export function worldFace({ n, D, state, slots = [], ribbon = false, number = false, popDots = false }) {
   const id = `f${++uid}`;
   const r = D / 2;
   const art = badgeArt[n];
@@ -180,14 +198,15 @@ export function worldFace({ n, D, state, slots = [], ribbon = false }) {
       ? `<g transform="scale(${fmt(k)}) translate(-12 -12)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--fg)">` +
         `<path d="${LOCK.shackle}" fill="none"/><path d="${LOCK.body}" class="fill-bg"/></g>`
       : '';
+  const num = number ? numberArt(n, 'class="fill-accent"') : '';
   const unit = (body) => `<g transform="translate(${r} ${r}) scale(${r})">${body}</g>`;
   return svg(
     D,
     `<defs><clipPath id="${id}"><circle r="1"/></clipPath></defs>` +
       (ribbon ? unit(`<path d="${ribbonPath()}" class="fill-accent"/>`) : '') +
       board(D, 'circle', `class="${complete ? 'fill-fg' : 'fill-bg'}"`) +
-      unit(`<g clip-path="url(#${id})">${amp}</g>`) +
+      unit(`<g clip-path="url(#${id})">${amp}${num}</g>`) +
       outline +
-      unit(ring + lock + (complete ? dots(slots) : '')),
+      unit(ring + lock + (complete ? dots(slots, popDots) : '')),
   );
 }

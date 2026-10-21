@@ -79,6 +79,9 @@ export const transitions = {
   // World complete
   worldTravel: { duration: 620, ease: easeInOutCubic, chromeFraction: 0.7, traySlide: 40 },
   worldFlip: { duration: 1000, ease: easeInOutBack(1.25), lift: 28, liftEase: easeInOutCubic },
+  // Once the badge has landed, its asterisks pop in one at a time, clockwise
+  // from the top. `stagger` is the gap between one starting and the next.
+  dotsIn: { delay: 120, duration: 320, stagger: 160, ease: easeOutBack(1.7), holdAfter: 120 },
   // Only for a perfect run, as the ribbon drops out.
   dip: { duration: 150, depth: 14, ease: easeInCubic },
   dipReturn: { duration: 350, ease: easeOutBack(2) },
@@ -92,7 +95,12 @@ export const transitions = {
   continueOut: 150,
   swipeOut: { duration: 440, distance: 420, ease: easeInCubic },
   swipeIn: { duration: 560, overlap: 160, ease: easeOutBack(1.3) },
+  // How the next world is named on the way in: 'number' puts its number in
+  // the accent inside its badge; 'heading' shows its menu heading above the
+  // badge, held for `headingHold` so there's time to read it.
+  nextWorldLabel: 'number',
   numberHold: 280,
+  headingHold: 900,
   riseFlip: { duration: 850, flipEase: easeInOutBack(1.25), moveEase: easeInOutCubic },
   // The header fades back in partway into the flip (the tray follows the canvas).
   headerIn: { duration: 320, startFraction: 0.45, ease: easeOutCubic },

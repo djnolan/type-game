@@ -413,12 +413,27 @@ export class Director {
 
       // Lift with a 360° flip to the badge.
       const badgeY = g.centerY - T.worldFlip.lift * g.k;
-      board.faces(null, worldFace({ n: from.world.world, D: g.D, state: 'complete', slots: badge }));
+      board.faces(null, worldFace({ n: from.world.world, D: g.D, state: 'complete', slots: badge, popDots: true }));
       await Promise.all([
         tween(T.worldFlip.duration, (e) => board.set({ ry: 360 * e }), T.worldFlip.ease),
         tween(T.worldFlip.duration, (e) => board.set({ y: lerp(g.centerY, badgeY, e) }), T.worldFlip.liftEase),
       ]);
       board.settle();
+
+      // The asterisks pop in one at a time once it has landed.
+      const di = T.dotsIn;
+      const dotEls = [...board.front.querySelectorAll('[data-dot]')];
+      if (dotEls.length) {
+        await this.seq.wait(di.delay);
+        await Promise.all(
+          dotEls.map((el, i) =>
+            after(i * di.stagger, () =>
+              tween(di.duration, (e) => el.setAttribute('transform', `translate(${el.dataset.x} ${el.dataset.y}) scale(${e})`), di.ease),
+            ),
+          ),
+        );
+        await this.seq.wait(di.holdAfter);
+      }
 
       // Dip, then, for a perfect run, the ribbon drops out from behind as the
       // badge springs back.
@@ -493,7 +508,21 @@ export class Director {
       const so = T.swipeOut;
       const distance = so.distance * g.k;
       const g2 = to ? this.geo(to.world) : null;
-      const num = to && this.coin(g2.D).faces(worldFace({ n: to.world.world, D: g2.D, state: 'open', slots: to.slots })).set({ x: g.cx + distance, y: badgeY });
+      const byNumber = T.nextWorldLabel === 'number';
+      const num =
+        to &&
+        this.coin(g2.D)
+          .faces(worldFace({ n: to.world.world, D: g2.D, state: 'open', slots: to.slots, number: byNumber }))
+          .set({ x: g.cx + distance, y: badgeY });
+      // Or the next world's menu heading, in the place this world's heading
+      // left, coming in with its badge.
+      let title = null;
+      if (to && !byNumber) {
+        title = this.node(div('ml-heading'), g.W, 40).set({ x: g.W / 2 + distance, y: heading.y, o: 0 });
+        title.el.innerHTML = HEADING;
+        title.el.querySelector('.ml-label').textContent = `${to.world.world} • ${to.world.name}`;
+        title.el.querySelector('.ml-check').style.visibility = 'hidden';
+      }
 
       await Promise.all([
         tween(T.continueOut, (e) => cont.set({ o: 1 - e })),
@@ -509,7 +538,14 @@ export class Director {
         ),
         num &&
           after(so.duration - T.swipeIn.overlap, () =>
-            tween(T.swipeIn.duration, (e) => num.set({ x: lerp(g.cx + distance, g.cx, e) }), T.swipeIn.ease),
+            tween(
+              T.swipeIn.duration,
+              (e) => {
+                num.set({ x: lerp(g.cx + distance, g.cx, e) });
+                title?.set({ x: lerp(g.W / 2 + distance, g.W / 2, e), o: clamp(e * 1.5, 0, 1) });
+              },
+              T.swipeIn.ease,
+            ),
           ),
       ]);
       this.drop(...[board, ribbon, heading, cont].filter(Boolean));
@@ -523,18 +559,19 @@ export class Director {
       this.hideParts(...STAGE_PARTS);
       this.chrome({ header: 0, tray: 0, done: 0 });
       num.faces(null, targetFace({ ...to, D: g2.D, shape }));
-      await wait(T.numberHold);
+      await wait(title ? T.headingHold : T.numberHold);
       for (const n of ['tray', 'done']) this.part(n).style.visibility = '';
 
       const rf = T.riseFlip;
       let canvas;
       await Promise.all([
+        title && tween(rf.duration * 0.35, (e) => title.set({ o: 1 - e, y: heading.y - 12 * g.k * e }), easeOutCubic),
         tween(rf.duration, (e) => num.set({ ry: 180 * e }), rf.flipEase),
         tween(rf.duration, (e) => num.set({ y: lerp(badgeY, g2.targetY, e) }), rf.moveEase),
         this.headerIn(rf.duration),
         this.canvasEnter(g2, canvasFace({ ...to, D: g2.D, shape })).then((c) => (canvas = c)),
       ]);
-      await this.finishInGame(num, canvas);
+      await this.finishInGame(...[num, canvas, title].filter(Boolean));
     });
   }
 
