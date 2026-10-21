@@ -123,6 +123,8 @@ class Coin extends Node {
 const ICON = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
 // The check is drawn from its short stroke, so it can animate in that way.
 const CHECK = `<svg class="ml-check" ${ICON}><path d="M4 12l5 5L20 6" pathLength="1"/></svg>`;
+// A heading whose text stays centred, with the check hung off its right side.
+const HEADING = `<span class="ml-title"><span class="ml-label"></span>${CHECK}</span>`;
 const ARROW = `<svg width="24" height="24" ${ICON}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
 
 function div(className, text = '') {
@@ -428,8 +430,8 @@ export class Director {
       const headingY = badgeY - r - 64 * g.q;
       // The menu's heading, with its check drawn in once the heading is up.
       const heading = this.node(div('ml-heading'), g.W, 40).set({ x: g.W / 2, y: headingY, o: 0 });
-      heading.el.innerHTML = `<span class="ml-label"></span>${CHECK}`;
-      heading.el.firstChild.textContent = `${from.world.world} • ${from.world.name}`;
+      heading.el.innerHTML = HEADING;
+      heading.el.querySelector('.ml-label').textContent = `${from.world.world} • ${from.world.name}`;
       const tick = heading.el.querySelector('path');
       tick.setAttribute('stroke-dasharray', '1');
       tick.setAttribute('stroke-dashoffset', '1');
@@ -571,7 +573,7 @@ export class Director {
       // over its middle. A completed world is replayed by tapping its badge.
       menu.label = this.node(div('ml-heading'), g.W, 40);
       menu.label.el.setAttribute('aria-live', 'polite');
-      menu.label.el.innerHTML = `<span class="ml-label"></span>${CHECK}`;
+      menu.label.el.innerHTML = HEADING;
       const labelY = menuY - r - gap;
       const enter = () => {
         const m = this.menu;
@@ -633,7 +635,8 @@ export class Director {
     const i = clamp(Math.round(m.scroll), 0, m.worlds.length - 1);
     const w = m.worlds[i];
     // A completed world's heading has a check; a locked world's is faded.
-    const [text, check] = m.label.el.children;
+    const text = m.label.el.querySelector('.ml-label');
+    const check = m.label.el.querySelector('.ml-check');
     text.textContent = w.label;
     text.classList.toggle('ml-locked', w.state === 'locked');
     check.style.display = w.state === 'complete' ? '' : 'none';
