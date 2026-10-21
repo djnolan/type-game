@@ -119,6 +119,11 @@ class Coin extends Node {
   }
 }
 
+// Lucide's check and arrow-right, in its 24-unit grid.
+const ICON = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+const CHECK = `<svg class="ml-check" ${ICON}><path d="M20 6 9 17l-5-5"/></svg>`;
+const ARROW = `<svg width="24" height="24" ${ICON}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+
 function div(className, text = '') {
   const el = document.createElement('div');
   el.className = className;
@@ -420,21 +425,23 @@ export class Director {
       const ribOut = badgeY + RIBBON.top * r + rib.h / 2;
       const ribbon = isPerfect(badge) ? this.node(this.ribbonEl(rib), rib.w, rib.h, 4).set({ x: g.cx, y: ribIn }) : null;
       const headingY = badgeY - r - 64 * g.q;
-      const heading = this.node(div('ml-heading', `World ${from.world.world} complete`), g.W, 40).set({ x: g.W / 2, y: headingY, o: 0 });
+      const heading = this.node(this.tickerEl(from.world), g.W * 1.4, 44).set({ x: g.W / 2, y: headingY, o: 0 });
       const button = document.createElement('button');
-      button.className = 'pill ml-continue';
-      button.textContent = 'Continue';
+      button.className = 'ml-arrow';
+      button.setAttribute('aria-label', 'Continue');
+      button.innerHTML = ARROW;
       button.addEventListener('click', () => this.mode === 'worldDone' && onContinue());
       const contY = Math.min(badgeY + RIBBON.bottom * r + 96 * g.q, g.H - 26 - 40);
-      const cont = this.node(button, 200, 52).set({ x: g.W / 2, y: contY, o: 0 });
+      const cont = this.node(button, 56, 56).set({ x: g.W / 2, y: contY, o: 0 });
       this.world = { board, ribbon, heading, cont, badgeY, g };
 
+      // A perfect run dips and springs back as the ribbon drops out.
       const dip = T.dip.depth * g.k;
-      await tween(T.dip.duration, (e) => board.set({ y: badgeY + dip * e }), T.dip.ease);
+      if (ribbon) await tween(T.dip.duration, (e) => board.set({ y: badgeY + dip * e }), T.dip.ease);
       const h = T.headingIn;
       const rise = h.rise * g.k;
       await Promise.all([
-        tween(T.dipReturn.duration, (e) => board.set({ y: badgeY + dip * (1 - e) }), T.dipReturn.ease),
+        ribbon && tween(T.dipReturn.duration, (e) => board.set({ y: badgeY + dip * (1 - e) }), T.dipReturn.ease),
         ribbon && tween(T.ribbonPop.duration, (e) => ribbon.set({ y: lerp(ribIn, ribOut, e) }), T.ribbonPop.ease),
         after(T.ribbonPop.duration * h.startFraction, () =>
           tween(h.duration, (e) => heading.set({ y: headingY + rise * (1 - e), o: e }), h.ease),
@@ -446,6 +453,27 @@ export class Director {
       this.setMode('worldDone');
       button.focus({ preventScroll: true });
     });
+  }
+
+  // The world complete heading: a full-bleed ink bar, tilted a little
+  // differently for each world, with "3 • Slab • Complete •" scrolling along it.
+  tickerEl(world) {
+    // The node owns the outer element's transform, so the bar inside tilts.
+    const el = div('');
+    const bar = div('ml-ticker');
+    const tilt = T.ticker.tilt[(world.world - 1) % T.ticker.tilt.length];
+    bar.style.transform = `rotate(${tilt}deg)`;
+    bar.setAttribute('role', 'heading');
+    bar.setAttribute('aria-label', `${world.world} • ${world.name} complete`);
+    const track = div('ml-ticker-track');
+    track.setAttribute('aria-hidden', 'true');
+    track.style.animationDuration = `${T.ticker.seconds}s`;
+    // Two identical halves, so scrolling by one half loops seamlessly.
+    const half = `${world.world} • ${world.name} • Complete • `.repeat(4);
+    for (let i = 0; i < 2; i++) track.appendChild(div('', half));
+    bar.appendChild(track);
+    el.appendChild(bar);
+    return el;
   }
 
   // The ribbon from the badge art, drawn on its own so it can drop out from
@@ -535,7 +563,9 @@ export class Director {
       const shape = this.env().shape;
       const mc = T.menu;
       const ms = mc.scale;
-      const menuY = g.H * mc.y;
+      const r = (g.D / 2) * ms;
+      const gap = mc.headingGap * g.k;
+      const menuY = g.H / 2 + (gap + mc.headingHeight) / 2;
       const menu = (this.menu = { worlds, scroll: index, g, menuY, onSelect, coins: [], spacing: mc.gap * g.k });
 
       const board = this.coin(g.D)
@@ -549,10 +579,10 @@ export class Director {
       menu.coins = worlds.map((w) => this.coin(g.D).faces(this.menuFace(w, g.D)).set({ y: menuY, s: ms, o: 0 }));
       // The heading sits above the circle, and an open world's Play pill sits
       // over its middle. A completed world is replayed by tapping its badge.
-      const r = (g.D / 2) * ms;
       menu.label = this.node(div('ml-heading'), g.W, 40);
       menu.label.el.setAttribute('aria-live', 'polite');
-      const labelY = menuY - r - 40 * g.k;
+      menu.label.el.innerHTML = `<span class="ml-label"></span>${CHECK}`;
+      const labelY = menuY - r - gap;
       const enter = () => {
         const m = this.menu;
         if (this.mode !== 'menu' || !m) return;
@@ -612,7 +642,11 @@ export class Director {
     m.coins.forEach((c, i) => c.set({ x: m.g.W / 2 + (i - m.scroll) * m.spacing + (off[i] || 0) }));
     const i = clamp(Math.round(m.scroll), 0, m.worlds.length - 1);
     const w = m.worlds[i];
-    m.label.el.textContent = w.label;
+    // A completed world's heading has a check; a locked world's is faded.
+    const [text, check] = m.label.el.children;
+    text.textContent = w.label;
+    text.classList.toggle('ml-locked', w.state === 'locked');
+    check.style.display = w.state === 'complete' ? '' : 'none';
     // Play rides over the circle, so it fades out while the circles move.
     const play = m.play.el.firstChild;
     play.textContent = w.action ?? '';

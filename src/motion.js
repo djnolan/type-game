@@ -79,11 +79,15 @@ export const transitions = {
   // World complete
   worldTravel: { duration: 620, ease: easeInOutCubic, chromeFraction: 0.7, traySlide: 40 },
   worldFlip: { duration: 1000, ease: easeInOutBack(1.25), lift: 28, liftEase: easeInOutCubic },
+  // Only for a perfect run, as the ribbon drops out.
   dip: { duration: 150, depth: 14, ease: easeInCubic },
   dipReturn: { duration: 350, ease: easeOutBack(2) },
   ribbonPop: { duration: 440, ease: easeOutBack(1.8) },
   headingIn: { duration: 320, rise: 12, ease: easeOutCubic, startFraction: 0.4 },
   continueDelay: 240,
+  // The world complete ticker: seconds for one copy of its text to scroll by,
+  // and each world's tilt in degrees.
+  ticker: { seconds: 14, tilt: [-3, 2.5, -2, 3.5, -4] },
 
   // Continue to the next world
   continueOut: 150,
@@ -99,8 +103,10 @@ export const transitions = {
     // Circle size as a fraction of the game circle, and centre-to-centre spacing.
     scale: 0.82,
     gap: 232,
-    // Vertical position of the centred circle, as a fraction of the screen height.
-    y: 0.475,
+    // The heading and circle together are centred on the screen; this is the
+    // heading's gap above the circle and its height, for 390px wide.
+    headingGap: 40,
+    headingHeight: 28,
   },
   menuOut: {
     canvasDrop: { duration: 380, ease: easeInCubic },
