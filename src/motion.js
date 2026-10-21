@@ -85,9 +85,8 @@ export const transitions = {
   ribbonPop: { duration: 440, ease: easeOutBack(1.8) },
   headingIn: { duration: 320, rise: 12, ease: easeOutCubic, startFraction: 0.4 },
   continueDelay: 240,
-  // The world complete ticker: seconds for one copy of its text to scroll by,
-  // and each world's tilt in degrees.
-  ticker: { seconds: 14, tilt: [-3, 2.5, -2, 3.5, -4] },
+  // The world complete heading's check draws in after the heading is up.
+  checkDraw: { duration: 360, ease: easeInOutCubic },
 
   // Continue to the next world
   continueOut: 150,

@@ -364,37 +364,6 @@ button {
   stroke-width: 3;
 }
 
-/* The world complete heading, a tilted ink bar with text scrolling along. */
-.ml-ticker {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  background: var(--fg);
-  color: var(--bg);
-  font-size: 22px;
-  font-weight: 500;
-}
-
-.ml-ticker-track {
-  display: flex;
-  flex: none;
-  white-space: pre;
-  animation: ticker linear infinite;
-}
-
-@keyframes ticker {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ml-ticker-track {
-    animation: none;
-  }
-}
-
 /* The world complete screen's continue button: an arrow in a circle. */
 .ml-arrow {
   display: grid;

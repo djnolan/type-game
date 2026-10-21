@@ -121,7 +121,8 @@ class Coin extends Node {
 
 // Lucide's check and arrow-right, in its 24-unit grid.
 const ICON = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
-const CHECK = `<svg class="ml-check" ${ICON}><path d="M20 6 9 17l-5-5"/></svg>`;
+// The check is drawn from its short stroke, so it can animate in that way.
+const CHECK = `<svg class="ml-check" ${ICON}><path d="M4 12l5 5L20 6" pathLength="1"/></svg>`;
 const ARROW = `<svg width="24" height="24" ${ICON}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
 
 function div(className, text = '') {
@@ -425,7 +426,15 @@ export class Director {
       const ribOut = badgeY + RIBBON.top * r + rib.h / 2;
       const ribbon = isPerfect(badge) ? this.node(this.ribbonEl(rib), rib.w, rib.h, 4).set({ x: g.cx, y: ribIn }) : null;
       const headingY = badgeY - r - 64 * g.q;
-      const heading = this.node(this.tickerEl(from.world), g.W * 1.4, 44).set({ x: g.W / 2, y: headingY, o: 0 });
+      // The menu's heading, with its check drawn in once the heading is up.
+      const heading = this.node(div('ml-heading'), g.W, 40).set({ x: g.W / 2, y: headingY, o: 0 });
+      heading.el.innerHTML = `<span class="ml-label"></span>${CHECK}`;
+      heading.el.firstChild.textContent = `${from.world.world} • ${from.world.name}`;
+      const tick = heading.el.querySelector('path');
+      tick.setAttribute('stroke-dasharray', '1');
+      tick.setAttribute('stroke-dashoffset', '1');
+      // Hidden until it draws, or its round cap shows as a dot.
+      tick.style.visibility = 'hidden';
       const button = document.createElement('button');
       button.className = 'ml-arrow';
       button.setAttribute('aria-label', 'Continue');
@@ -443,9 +452,11 @@ export class Director {
       await Promise.all([
         ribbon && tween(T.dipReturn.duration, (e) => board.set({ y: badgeY + dip * (1 - e) }), T.dipReturn.ease),
         ribbon && tween(T.ribbonPop.duration, (e) => ribbon.set({ y: lerp(ribIn, ribOut, e) }), T.ribbonPop.ease),
-        after(T.ribbonPop.duration * h.startFraction, () =>
-          tween(h.duration, (e) => heading.set({ y: headingY + rise * (1 - e), o: e }), h.ease),
-        ),
+        after(T.ribbonPop.duration * h.startFraction, async () => {
+          await tween(h.duration, (e) => heading.set({ y: headingY + rise * (1 - e), o: e }), h.ease);
+          tick.style.visibility = '';
+          await tween(T.checkDraw.duration, (e) => tick.setAttribute('stroke-dashoffset', 1 - e), T.checkDraw.ease);
+        }),
         after(T.ribbonPop.duration * h.startFraction + T.continueDelay, () =>
           tween(h.duration, (e) => cont.set({ y: contY + rise * (1 - e), o: e }), h.ease),
         ),
@@ -453,27 +464,6 @@ export class Director {
       this.setMode('worldDone');
       button.focus({ preventScroll: true });
     });
-  }
-
-  // The world complete heading: a full-bleed ink bar, tilted a little
-  // differently for each world, with "3 • Slab • Complete •" scrolling along it.
-  tickerEl(world) {
-    // The node owns the outer element's transform, so the bar inside tilts.
-    const el = div('');
-    const bar = div('ml-ticker');
-    const tilt = T.ticker.tilt[(world.world - 1) % T.ticker.tilt.length];
-    bar.style.transform = `rotate(${tilt}deg)`;
-    bar.setAttribute('role', 'heading');
-    bar.setAttribute('aria-label', `${world.world} • ${world.name} complete`);
-    const track = div('ml-ticker-track');
-    track.setAttribute('aria-hidden', 'true');
-    track.style.animationDuration = `${T.ticker.seconds}s`;
-    // Two identical halves, so scrolling by one half loops seamlessly.
-    const half = `${world.world} • ${world.name} • Complete • `.repeat(4);
-    for (let i = 0; i < 2; i++) track.appendChild(div('', half));
-    bar.appendChild(track);
-    el.appendChild(bar);
-    return el;
   }
 
   // The ribbon from the badge art, drawn on its own so it can drop out from
