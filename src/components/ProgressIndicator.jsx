@@ -1,47 +1,53 @@
-const R = 6.5;
-const STEP = 16;
-// The current world's progress ring: a thick arc just inside the outline.
+// One dot per world. Size marks the world being played: it gets a large dot,
+// and the others are small. Played worlds are ink, worlds still to play are
+// faint. The current world's dot carries an accent ring, just inside its edge,
+// that fills like a donut chart as its levels are completed.
+const R = 6.5; // the current world's dot
+const r = 2.75; // every other world's dot
+const GAP = 7.5; // between neighbouring dots' edges
 const RING_WIDTH = 2.6;
-const RING_R = R + 0.6 - RING_WIDTH / 2;
+const RING_R = R - RING_WIDTH / 2;
 
 // stroke-dasharray for a ring filled clockwise from 12 o'clock by `fraction`
 // (0–1). Also used by the level-complete transition to animate the fill.
-export function ringDash(r, fraction) {
-  const c = 2 * Math.PI * r;
+export function ringDash(radius, fraction) {
+  const c = 2 * Math.PI * radius;
   return `${Math.max(0, Math.min(1, fraction)) * c} ${c}`;
 }
 
-// One dot per world: completed worlds are filled, the current world has a
-// small centre dot with a ring that fills like a donut chart as its levels are
-// completed, and future worlds are empty.
 export default function ProgressIndicator({ worlds }) {
-  const width = STEP * (worlds.length - 1) + 2 * R + 2;
+  const radii = worlds.map((w) => (w.state === 'current' ? R : r));
+  const centres = [];
+  let x = 1;
+  radii.forEach((rad, i) => {
+    if (i) x += GAP;
+    centres.push(x + rad);
+    x += 2 * rad;
+  });
+  const width = x + 1;
+  const cy = R + 1;
   const label = worlds.map((w) => `World ${w.world}: ${w.state}`).join(', ');
   return (
     <svg width={width} height={2 * R + 2} role="img" aria-label={label}>
       {worlds.map((w, i) => {
-        const cx = R + 1 + i * STEP;
-        const cy = R + 1;
-        if (w.state === 'complete') return <circle key={w.world} cx={cx} cy={cy} r={R + 0.6} className="fill-fg" />;
+        const cx = centres[i];
+        if (w.state !== 'current') {
+          return <circle key={w.world} cx={cx} cy={cy} r={radii[i]} className={w.state === 'complete' ? 'fill-fg' : 'fill-faint'} />;
+        }
         return (
           <g key={w.world}>
-            <circle cx={cx} cy={cy} r={R} className="fill-none stroke-outline" style={{ strokeWidth: 1.2 }} />
-            {w.state === 'current' && (
-              <>
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r={RING_R}
-                  transform={`rotate(-90 ${cx} ${cy})`}
-                  className="fill-none"
-                  style={{ stroke: 'var(--fg)', strokeWidth: RING_WIDTH }}
-                  strokeDasharray={ringDash(RING_R, w.fraction)}
-                  data-progress-ring=""
-                  data-r={RING_R}
-                />
-                <circle cx={cx} cy={cy} r={1.8} className="fill-fg" />
-              </>
-            )}
+            <circle cx={cx} cy={cy} r={R} className="fill-fg" />
+            <circle
+              cx={cx}
+              cy={cy}
+              r={RING_R}
+              transform={`rotate(-90 ${cx} ${cy})`}
+              className="fill-none"
+              style={{ stroke: 'var(--accent)', strokeWidth: RING_WIDTH }}
+              strokeDasharray={ringDash(RING_R, w.fraction)}
+              data-progress-ring=""
+              data-r={RING_R}
+            />
           </g>
         );
       })}

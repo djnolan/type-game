@@ -71,6 +71,8 @@ button {
 .fill-bg { fill: var(--bg); }
 .fill-accent { fill: var(--accent); }
 .fill-grid { fill: var(--grid); }
+/* Worlds still to play in the header progress dots. */
+.fill-faint { fill: color-mix(in srgb, var(--fg) 22%, var(--bg)); }
 .fill-grid-dot { fill: var(--grid-dot); }
 .fill-none { fill: none; }
 .stroke-outline { stroke: var(--outline); stroke-width: var(--outline-width); }
