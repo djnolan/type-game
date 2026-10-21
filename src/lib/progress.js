@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { levels, worlds } from './data';
-import { markFor, runScore } from './marks';
+import { markFor } from './marks';
 
 const KEY = 'type-game/progress/v1';
 // The level on screen, so a jump from world select survives a reload.
@@ -88,7 +88,8 @@ export function worldStates(completed, activeWorld) {
 // World runs. A run is one playthrough of a world's levels, from level 1. It
 // records the mark each level earned (lib/marks.js), and counts each level's
 // checks until it's passed, so leaving a level or reloading doesn't reset them.
-// The best finished run per world is kept for its badge.
+// The best marks per world are kept for its badge: a finished run's, raised
+// level by level whenever a replay does better.
 //
 // Stored as { best: { [world]: [mark per level] },
 //             runs: { [world]: { marks: { [levelId]: mark }, checks: { [levelId]: n } } } }.
@@ -141,24 +142,24 @@ export function useRuns() {
     commit(withRun(level.world, { ...run, checks: { ...run.checks, [level.id]: checksFor(level) + 1 } }));
   }
 
-  // Records a passed level's mark in its world's run and returns the mark. On
-  // the world's last level, a run that covers every level is finished: it
-  // becomes the world's best if it scores higher than the one kept (a tie
-  // keeps the existing one), and a new run starts.
+  // Records a passed level's mark in its world's run and returns the mark. A
+  // world with a best run gets a better mark for the level in it right away,
+  // so a replay can only improve the badge. On the world's last level, a run
+  // that covers every level is finished: it becomes the best of a world that
+  // has none, and a new run starts.
   function pass(level, world) {
     const mark = markFor(checksFor(level));
     const run = runOf(level.world);
     const marks = { ...run.marks, [level.id]: mark };
     const { [level.id]: _, ...checks } = run.checks;
-    if (world.levels.at(-1).id !== level.id) {
-      commit(withRun(level.world, { marks, checks }));
-      return mark;
-    }
-    const next = withRun(level.world, null);
-    if (world.levels.every((l) => l.id in marks)) {
-      const finished = world.levels.map((l) => marks[l.id]);
-      const kept = next.best[level.world];
-      if (!kept || runScore(finished) > runScore(kept)) next.best = { ...next.best, [level.world]: finished };
+    const isLast = world.levels.at(-1).id === level.id;
+    const next = withRun(level.world, isLast ? null : { marks, checks });
+    const kept = next.best[level.world];
+    if (kept) {
+      const i = world.levels.findIndex((l) => l.id === level.id);
+      if (mark > (kept[i] ?? 0)) next.best = { ...next.best, [level.world]: kept.map((m, j) => (j === i ? mark : m)) };
+    } else if (isLast && world.levels.every((l) => l.id in marks)) {
+      next.best = { ...next.best, [level.world]: world.levels.map((l) => marks[l.id]) };
     }
     commit(next);
     return mark;

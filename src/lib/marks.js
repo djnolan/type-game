@@ -8,8 +8,6 @@ export const REWARDED_CHECKS = 3;
 // The mark a pass on this check earns.
 export const markFor = (check) => (check >= 1 && check <= REWARDED_CHECKS ? REWARDED_CHECKS + 1 - check : 0);
 
-export const markScore = (mark) => mark;
-export const runScore = (marks) => marks.reduce((sum, m) => sum + markScore(m), 0);
 export const isPerfect = (marks) => marks.length > 0 && marks.every((m) => m === REWARDED_CHECKS);
 
 // The asterisk outline from DM Sans 500, in font units (1000 to the em), with

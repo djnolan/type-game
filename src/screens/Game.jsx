@@ -164,14 +164,12 @@ export default function Game({ testLevel, onBack }) {
       // every level as passed with no mark.
       const kept = runs.bestOf(w.world);
       const best = kept.length ? kept : w.levels.map(() => 0);
-      const run = runs.slotsOf(w);
-      const action = isComplete ? 'Replay' : 'Play';
+      const action = isComplete ? null : 'Play';
       return {
         world: w,
-        // A completed world shows the best run's asterisks until a replay
-        // passes its first level, then that run's.
+        // A completed world shows its best marks; tapping it replays it.
         state: isComplete ? 'complete' : selectable ? 'open' : 'locked',
-        slots: isComplete && !run.some((m) => m != null) ? best : run,
+        slots: isComplete ? best : runs.slotsOf(w),
         perfect: isComplete && isPerfect(best),
         label: `${w.world} • ${w.name}`,
         action,

@@ -117,7 +117,7 @@ export const RIBBON = { half: 0.1778, top: 0.769, bottom: 1.48, notch: 0.0444 };
 const FAINT = { amp: 0.15, outline: 0.5 };
 // Lucide's lock, in its 24-unit grid, drawn this wide in circle radii. Its
 // body is filled with paper so the ampersand doesn't show through.
-const LOCK = { body: 'M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z', shackle: 'M7 11V7a5 5 0 0 1 10 0v4', size: 0.415 };
+const LOCK = { body: 'M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z', shackle: 'M7 11V7a5 5 0 0 1 10 0v4', size: 0.33 };
 
 // How far round from the top the arc reaches: a share per level passed.
 export function arcFraction(slots) {
