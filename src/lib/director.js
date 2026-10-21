@@ -1,7 +1,8 @@
 import { ringDash } from '../components/ProgressIndicator';
 import { transitions as T } from '../motion';
 import { easeOutBack, easeOutCubic } from './easing';
-import { badgeFace, canvasFace, numberFace, solvedFace, targetFace } from './faces';
+import { RIBBON, canvasFace, ribbonPath, solvedFace, targetFace, worldFace } from './faces';
+import { isPerfect } from './marks';
 import { createSequencer } from './sequence';
 
 // Plays the screen transitions: level complete, world complete, continue to
@@ -117,6 +118,14 @@ class Coin extends Node {
     this.shade.style.opacity = (Math.abs(Math.sin(rad)) * 0.3).toFixed(3);
   }
 }
+
+// Lucide's check and arrow-right, in its 24-unit grid.
+const ICON = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+// The check is drawn from its short stroke, so it can animate in that way.
+const CHECK = `<svg class="ml-check" ${ICON}><path d="M4 12l5 5L20 6" pathLength="1"/></svg>`;
+// A heading whose text stays centred, with the check hung off its right side.
+const HEADING = `<span class="ml-title"><span class="ml-label"></span>${CHECK}</span>`;
+const ARROW = `<svg width="24" height="24" ${ICON}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
 
 function div(className, text = '') {
   const el = document.createElement('div');
@@ -404,39 +413,52 @@ export class Director {
 
       // Lift with a 360° flip to the badge.
       const badgeY = g.centerY - T.worldFlip.lift * g.k;
-      board.faces(null, badgeFace({ D: g.D, marks: badge }));
+      board.faces(null, worldFace({ n: from.world.world, D: g.D, state: 'complete', slots: badge }));
       await Promise.all([
         tween(T.worldFlip.duration, (e) => board.set({ ry: 360 * e }), T.worldFlip.ease),
         tween(T.worldFlip.duration, (e) => board.set({ y: lerp(g.centerY, badgeY, e) }), T.worldFlip.liftEase),
       ]);
       board.settle();
 
-      // Dip, then the ribbon drops out from behind as the badge springs back.
+      // Dip, then, for a perfect run, the ribbon drops out from behind as the
+      // badge springs back.
       const r = g.D / 2;
-      const rib = { w: 44 * g.q, h: 100 * g.q };
+      const rib = { w: 2 * RIBBON.half * r, h: (RIBBON.bottom - RIBBON.top) * r };
       const ribIn = badgeY + r - 14 * g.q - rib.h / 2;
-      const ribOut = badgeY + r - T.ribbonPop.tucked * g.q + rib.h / 2;
-      const ribbon = this.node(this.ribbonEl(from.world.world, rib), rib.w, rib.h, 4).set({ x: g.cx, y: ribIn });
+      const ribOut = badgeY + RIBBON.top * r + rib.h / 2;
+      const ribbon = isPerfect(badge) ? this.node(this.ribbonEl(rib), rib.w, rib.h, 4).set({ x: g.cx, y: ribIn }) : null;
       const headingY = badgeY - r - 64 * g.q;
-      const heading = this.node(div('ml-heading', `World ${from.world.world} complete`), g.W, 40).set({ x: g.W / 2, y: headingY, o: 0 });
+      // The menu's heading, with its check drawn in once the heading is up.
+      const heading = this.node(div('ml-heading'), g.W, 40).set({ x: g.W / 2, y: headingY, o: 0 });
+      heading.el.innerHTML = HEADING;
+      heading.el.querySelector('.ml-label').textContent = `${from.world.world} • ${from.world.name}`;
+      const tick = heading.el.querySelector('path');
+      tick.setAttribute('stroke-dasharray', '1');
+      tick.setAttribute('stroke-dashoffset', '1');
+      // Hidden until it draws, or its round cap shows as a dot.
+      tick.style.visibility = 'hidden';
       const button = document.createElement('button');
-      button.className = 'pill ml-continue';
-      button.textContent = 'Continue';
+      button.className = 'ml-arrow';
+      button.setAttribute('aria-label', 'Continue');
+      button.innerHTML = ARROW;
       button.addEventListener('click', () => this.mode === 'worldDone' && onContinue());
-      const contY = Math.min(ribOut + rib.h / 2 + 96 * g.q, g.H - 26 - 40);
-      const cont = this.node(button, 200, 52).set({ x: g.W / 2, y: contY, o: 0 });
+      const contY = Math.min(badgeY + RIBBON.bottom * r + 96 * g.q, g.H - 26 - 40);
+      const cont = this.node(button, 56, 56).set({ x: g.W / 2, y: contY, o: 0 });
       this.world = { board, ribbon, heading, cont, badgeY, g };
 
+      // A perfect run dips and springs back as the ribbon drops out.
       const dip = T.dip.depth * g.k;
-      await tween(T.dip.duration, (e) => board.set({ y: badgeY + dip * e }), T.dip.ease);
+      if (ribbon) await tween(T.dip.duration, (e) => board.set({ y: badgeY + dip * e }), T.dip.ease);
       const h = T.headingIn;
       const rise = h.rise * g.k;
       await Promise.all([
-        tween(T.dipReturn.duration, (e) => board.set({ y: badgeY + dip * (1 - e) }), T.dipReturn.ease),
-        tween(T.ribbonPop.duration, (e) => ribbon.set({ y: lerp(ribIn, ribOut, e) }), T.ribbonPop.ease),
-        after(T.ribbonPop.duration * h.startFraction, () =>
-          tween(h.duration, (e) => heading.set({ y: headingY + rise * (1 - e), o: e }), h.ease),
-        ),
+        ribbon && tween(T.dipReturn.duration, (e) => board.set({ y: badgeY + dip * (1 - e) }), T.dipReturn.ease),
+        ribbon && tween(T.ribbonPop.duration, (e) => ribbon.set({ y: lerp(ribIn, ribOut, e) }), T.ribbonPop.ease),
+        after(T.ribbonPop.duration * h.startFraction, async () => {
+          await tween(h.duration, (e) => heading.set({ y: headingY + rise * (1 - e), o: e }), h.ease);
+          tick.style.visibility = '';
+          await tween(T.checkDraw.duration, (e) => tick.setAttribute('stroke-dashoffset', 1 - e), T.checkDraw.ease);
+        }),
         after(T.ribbonPop.duration * h.startFraction + T.continueDelay, () =>
           tween(h.duration, (e) => cont.set({ y: contY + rise * (1 - e), o: e }), h.ease),
         ),
@@ -446,18 +468,20 @@ export class Director {
     });
   }
 
-  ribbonEl(n, { w, h }) {
+  // The ribbon from the badge art, drawn on its own so it can drop out from
+  // behind the badge.
+  ribbonEl({ w, h }) {
     const el = document.createElement('div');
     el.innerHTML =
-      `<svg width="${w}" height="${h}" viewBox="0 0 44 100" aria-hidden="true">` +
-      `<path d="M0 0H44V100L22 84 0 100Z" class="fill-accent"/>` +
-      `<text x="22" y="58" text-anchor="middle" dominant-baseline="central" style="font:500 20px var(--ui-font);fill:var(--bg)">${Number(n)}</text></svg>`;
+      `<svg width="${w}" height="${h}" viewBox="${-RIBBON.half} ${RIBBON.top} ${2 * RIBBON.half} ${RIBBON.bottom - RIBBON.top}" aria-hidden="true">` +
+      `<path d="${ribbonPath()}" class="fill-accent"/></svg>`;
     return el;
   }
 
   // ---- 4. Continue to the next world --------------------------------------------
 
-  // `to` is { world, level }, or null when there's nothing left to play.
+  // `to` is { world, level, slots }, or null when there's nothing left to play.
+  // `slots` is the world's current run, for its circle.
   nextWorld({ to, swap }) {
     return this.seq.run(async () => {
       if (this.mode !== 'worldDone' || !this.world) return;
@@ -469,7 +493,7 @@ export class Director {
       const so = T.swipeOut;
       const distance = so.distance * g.k;
       const g2 = to ? this.geo(to.world) : null;
-      const num = to && this.coin(g2.D).faces(numberFace({ n: to.world.world, D: g2.D })).set({ x: g.cx + distance, y: badgeY });
+      const num = to && this.coin(g2.D).faces(worldFace({ n: to.world.world, D: g2.D, state: 'open', slots: to.slots })).set({ x: g.cx + distance, y: badgeY });
 
       await Promise.all([
         tween(T.continueOut, (e) => cont.set({ o: 1 - e })),
@@ -478,7 +502,7 @@ export class Director {
           (e) => {
             const dx = -distance * e;
             board.set({ dx });
-            ribbon.set({ dx });
+            ribbon?.set({ dx });
             heading.set({ dx, o: 1 - e });
           },
           so.ease,
@@ -488,7 +512,7 @@ export class Director {
             tween(T.swipeIn.duration, (e) => num.set({ x: lerp(g.cx + distance, g.cx, e) }), T.swipeIn.ease),
           ),
       ]);
-      this.drop(board, ribbon, heading, cont);
+      this.drop(...[board, ribbon, heading, cont].filter(Boolean));
 
       swap();
       if (!to) {
@@ -517,9 +541,10 @@ export class Director {
   // ---- 5. World menu --------------------------------------------------------------
 
   // `from` is { world, level, letters } on screen. `worlds` lists every world as
-  // { world, face: 'badge' | 'number' | 'locked', marks, label, action, selectable },
-  // where `label` is the category name, `action` the button text (Begin,
-  // Continue or Replay) and `marks` the best run's marks shown on a badge.
+  // { world, state: 'complete' | 'open' | 'locked', slots, perfect, label, action, selectable },
+  // where `state`, `slots` and `perfect` (hang the ribbon) are for its circle
+  // (worldFace in lib/faces.js), `label` is the heading and `action` the text
+  // of the pill over an open world's circle (none for other worlds).
   // `index` is the world on screen. onSelect(i) is called when a world is tapped.
   toMenu({ from, worlds, index, onSelect }) {
     return this.seq.run(async () => {
@@ -530,7 +555,9 @@ export class Director {
       const shape = this.env().shape;
       const mc = T.menu;
       const ms = mc.scale;
-      const menuY = g.H * mc.y;
+      const r = (g.D / 2) * ms;
+      const gap = mc.headingGap * g.k;
+      const menuY = g.H / 2 + (gap + mc.headingHeight) / 2;
       const menu = (this.menu = { worlds, scroll: index, g, menuY, onSelect, coins: [], spacing: mc.gap * g.k });
 
       const board = this.coin(g.D)
@@ -542,29 +569,29 @@ export class Director {
       this.hideParts('target', 'canvas', 'caption');
 
       menu.coins = worlds.map((w) => this.coin(g.D).faces(this.menuFace(w, g.D)).set({ y: menuY, s: ms, o: 0 }));
-      // The world's category name sits above the circle, and a pill button below
-      // it enters the world. The button sits low enough to clear the ribbon a
-      // perfect badge will hang below the circle.
-      const r = (g.D / 2) * ms;
+      // The heading sits above the circle, and an open world's Play pill sits
+      // over its middle. A completed world is replayed by tapping its badge.
       menu.label = this.node(div('ml-heading'), g.W, 40);
       menu.label.el.setAttribute('aria-live', 'polite');
-      const labelY = menuY - r - 40 * g.k;
-      const button = document.createElement('button');
-      button.className = 'pill ml-continue';
-      button.addEventListener('click', () => {
+      menu.label.el.innerHTML = HEADING;
+      const labelY = menuY - r - gap;
+      const enter = () => {
         const m = this.menu;
         if (this.mode !== 'menu' || !m) return;
         const i = clamp(Math.round(m.scroll), 0, m.worlds.length - 1);
         if (m.worlds[i].selectable) m.onSelect(i);
-      });
-      menu.button = this.node(button, 200, 52);
-      const ribbonDrop = (100 - T.ribbonPop.tucked) * g.q * ms;
-      const buttonY = Math.min(menuY + r + ribbonDrop + 48 * g.k, g.H - 26 - 40);
+      };
+      const play = document.createElement('button');
+      play.className = 'ml-play';
+      play.addEventListener('click', enter);
+      menu.play = this.node(div(''), 0.89 * r, 0.32 * r);
+      menu.play.el.appendChild(play);
+      menu.play.el.style.setProperty('--r', `${r}px`);
       const nb = T.menuOut.neighbours;
       const off = worlds.map((_, i) => (i < index ? -1 : 1) * nb.distance * g.k);
       this.layoutMenu(off);
       menu.label.set({ x: g.W / 2, y: labelY, o: 0 });
-      menu.button.set({ x: g.W / 2, y: buttonY, o: 0 });
+      menu.play.set({ x: g.W / 2, y: menuY, o: 0 });
 
       const mo = T.menuOut;
       const dropTo = g.H + g.D / 2 + 40;
@@ -584,7 +611,7 @@ export class Director {
               this.layoutMenu(off.map((o) => o * (1 - e)));
               menu.coins.forEach((c, i) => i !== index && c.set({ o: e }));
               menu.label.set({ y: labelY + nb.labelRise * g.k * (1 - e), o: e });
-              menu.button.set({ y: buttonY + nb.labelRise * g.k * (1 - e), o: e });
+              menu.play.set({ o: e });
             },
             nb.ease,
           ),
@@ -599,8 +626,7 @@ export class Director {
   }
 
   menuFace(w, D) {
-    if (w.face === 'badge') return badgeFace({ D, marks: w.marks });
-    return numberFace({ n: w.world.world, D, locked: w.face === 'locked' });
+    return worldFace({ n: w.world.world, D, state: w.state, slots: w.slots, ribbon: w.perfect });
   }
 
   layoutMenu(off = []) {
@@ -608,11 +634,17 @@ export class Director {
     m.coins.forEach((c, i) => c.set({ x: m.g.W / 2 + (i - m.scroll) * m.spacing + (off[i] || 0) }));
     const i = clamp(Math.round(m.scroll), 0, m.worlds.length - 1);
     const w = m.worlds[i];
-    m.label.el.textContent = w.label;
-    // Locked worlds have no button.
-    const btn = m.button.el;
-    btn.textContent = w.action ?? '';
-    btn.style.visibility = w.selectable ? '' : 'hidden';
+    // A completed world's heading has a check; a locked world's is faded.
+    const text = m.label.el.querySelector('.ml-label');
+    const check = m.label.el.querySelector('.ml-check');
+    text.textContent = w.label;
+    text.classList.toggle('ml-locked', w.state === 'locked');
+    check.style.display = w.state === 'complete' ? '' : 'none';
+    // Play rides over the circle, so it fades out while the circles move.
+    const play = m.play.el.firstChild;
+    play.textContent = w.action ?? '';
+    play.style.visibility = w.selectable && w.action ? '' : 'hidden';
+    play.style.opacity = clamp(1 - Math.abs(m.scroll - i) * 4, 0, 1);
   }
 
   snapMenu(to) {
@@ -728,7 +760,7 @@ export class Director {
           (e) => {
             m.coins.forEach((c, j) => j !== index && c.set({ dx: (j < index ? -dist : dist) * e, o: 1 - e }));
             m.label.set({ o: 1 - e });
-            m.button.set({ o: 1 - e });
+            m.play.set({ o: 1 - e });
           },
           sel.ease,
         ),
@@ -737,7 +769,7 @@ export class Director {
         this.headerIn(rf.duration),
         this.canvasEnter(g2, canvasFace({ ...to, D: g2.D, shape })).then((c) => (canvas = c)),
       ]);
-      this.drop(...m.coins, m.label, m.button);
+      this.drop(...m.coins, m.label, m.play);
       this.menu = null;
       await this.finishInGame(board, canvas);
     });

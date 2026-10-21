@@ -9,7 +9,7 @@ import { EDITOR_ENABLED } from '../lib/dev';
 import { Director } from '../lib/director';
 import { computeLayout, glyphExtent } from '../lib/geometry';
 import { getShape } from '../lib/shape';
-import { markFor } from '../lib/marks';
+import { isPerfect, markFor } from '../lib/marks';
 import { currentLevel, loadCurrentId, nextLevel, saveCurrentId, useProgress, useRuns, worldStates } from '../lib/progress';
 import { useSize } from '../lib/useSize';
 
@@ -128,7 +128,7 @@ export default function Game({ testLevel, onBack }) {
         release,
         onContinue: () =>
           director.current.nextWorld({
-            to: next && { world: getWorld(next.world), level: next },
+            to: next && { world: getWorld(next.world), level: next, slots: runs.slotsOf(getWorld(next.world)) },
             swap: swapTo(next?.id ?? null),
           }),
       });
@@ -160,12 +160,18 @@ export default function Game({ testLevel, onBack }) {
       const total = w.levels.length;
       const isComplete = total > 0 && doneIn(w, completed) === total;
       const selectable = total > 0 && (isComplete || w.world === current || w.world === level.world);
-      const action = isComplete ? 'Replay' : doneIn(w, completed) > 0 ? 'Continue' : 'Begin';
+      // A world completed with no finished run (a world select jump) counts
+      // every level as passed with no mark.
+      const kept = runs.bestOf(w.world);
+      const best = kept.length ? kept : w.levels.map(() => 0);
+      const action = isComplete ? null : 'Play';
       return {
         world: w,
-        face: isComplete ? 'badge' : selectable ? 'number' : 'locked',
-        marks: runs.bestOf(w.world),
-        label: w.name,
+        // A completed world shows its best marks; tapping it replays it.
+        state: isComplete ? 'complete' : selectable ? 'open' : 'locked',
+        slots: isComplete ? best : runs.slotsOf(w),
+        perfect: isComplete && isPerfect(best),
+        label: `${w.world} • ${w.name}`,
         action,
         selectable,
       };

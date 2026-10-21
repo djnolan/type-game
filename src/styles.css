@@ -345,8 +345,54 @@ button {
   letter-spacing: -0.01em;
 }
 
-.ml-continue {
-  font-size: 16px;
-  font-weight: 500;
+/* A world menu heading: faded for a locked world, with a check for a
+   completed one. */
+.ml-title {
+  position: relative;
+}
+
+.ml-locked {
+  opacity: 0.35;
+}
+
+.ml-check {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  margin: -11px 0 0 6px;
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+  stroke-width: 3;
+}
+
+/* The world complete screen's continue button: an arrow in a circle. */
+.ml-arrow {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
   padding: 0;
+  border: var(--outline-width) solid var(--outline);
+  border-radius: 50%;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+/* The world menu's Play pill, over an open world's circle. It fills its
+   positioned wrapper and is sized from the circle's radius, --r. */
+.ml-play {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  font-weight: 500;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: calc(var(--r) * 0.22);
+  letter-spacing: 0.02em;
 }
