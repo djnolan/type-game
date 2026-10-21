@@ -94,28 +94,30 @@ export function canvasFace({ world, level, letters = [], D, shape }) {
 
 // A world's circle on the menu, the world complete screen and the swap to
 // the next world, from Dan's badge art. Each world has its own ampersand, cut
-// from the world's typeface and cropped by the circle, and its number in
-// Archivo Narrow (both outlines in data/badges.json, in a space where the
-// circle is centred on 0 0 with radius 1).
+// from the world's typeface and cropped by the circle (outline in
+// data/badges.json, in a space where the circle is centred on 0 0 with radius 1).
 //
-// `state` sets the inside of the circle:
-// - 'locked': dashed outline, faint ampersand and faint number.
-// - 'open': paper circle, faint ampersand, accent number.
-// - 'complete': ink circle with a paper ampersand over an accent number.
+// `state` is one of:
+// - 'locked': dashed outline, faint ampersand and a lock.
+// - 'open': paper circle with an accent outline and a faint ampersand. The
+//   accent arc grows clockwise from the top by one level's share for each
+//   level passed in `slots`. The menu sets its Play button over the middle.
+// - 'complete': ink circle with a paper ampersand, and the asterisks from
+//   `slots`: a level with a mark gets an accent dot with the mark's asterisk,
+//   at the end of its level's share; a level with no mark leaves its spot empty.
 //
-// `slots` sets the ring, and has one entry per level, in order: the mark the
-// level earned (lib/marks.js), or null if it hasn't been passed. The accent arc
-// grows clockwise from the top by one level's share for each level passed, and
-// a level with a mark gets an accent dot with the mark's asterisk at the end of
-// its share. A level passed with no mark leaves its spot empty.
-//
-// `ribbon` hangs the ribbon behind the circle (for a perfect run; the world
-// complete screen drops its ribbon in separately).
+// `slots` has one entry per level, in order: the mark the level earned
+// (lib/marks.js), or null if it hasn't been passed. `ribbon` hangs the ribbon
+// behind the circle (for a perfect run; the world complete screen drops its
+// ribbon in separately).
 
-const RING = { outer: 1, inner: 0.94 };
-const DOT = { at: 0.966, r: 0.1286, mark: 0.1237 };
+const RING = { outer: 1, inner: 0.947 };
+const DOT = { at: 0.81, r: 0.1286, mark: 0.1237 };
 export const RIBBON = { half: 0.1778, top: 0.769, bottom: 1.48, notch: 0.0444 };
-const FAINT = { amp: 0.15, number: 0.25, outline: 0.5 };
+const FAINT = { amp: 0.15, outline: 0.5 };
+// Lucide's lock, in its 24-unit grid, drawn this wide in circle radii. Its
+// body is filled with paper so the ampersand doesn't show through.
+const LOCK = { body: 'M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z', shackle: 'M7 11V7a5 5 0 0 1 10 0v4', size: 0.415 };
 
 // How far round from the top the arc reaches: a share per level passed.
 export function arcFraction(slots) {
@@ -126,13 +128,6 @@ const fmt = (v) => +v.toFixed(4);
 
 function artPath(part, attrs) {
   return `<path d="${part.d}" transform="matrix(${part.scale} 0 0 ${part.scale} ${part.x} ${part.y})" ${attrs}/>`;
-}
-
-// The number, as its outline when there is one, else as UI-font text.
-function numberArt(n, attrs) {
-  const art = badgeArt[n]?.number;
-  if (art) return artPath(art, attrs);
-  return `<text x="0" y="0" text-anchor="middle" dominant-baseline="central" style="font:500 0.9px var(--ui-font)" ${attrs}>${Number(n)}</text>`;
 }
 
 // `outer` lets the ring reach just past the circle, to cover its outline.
@@ -170,27 +165,29 @@ export function worldFace({ n, D, state, slots = [], ribbon = false }) {
   const r = D / 2;
   const art = badgeArt[n];
   const complete = state === 'complete';
-  const amp = art ? (complete ? artPath(art.amp, 'class="fill-bg"') : artPath(art.amp, `class="fill-fg" opacity="${FAINT.amp}"`)) : '';
-  const num = numberArt(n, state === 'locked' ? `class="fill-fg" opacity="${FAINT.number}"` : 'class="fill-accent"');
-  // Complete, the ampersand sits over the number; otherwise under it.
-  const inside = complete ? num + amp : amp + num;
-  const outline =
-    state === 'locked'
-      ? `<circle cx="${r}" cy="${r}" r="${r}" fill="none" stroke-linecap="round" stroke-dasharray="${fmt(D * 0.0178)} ${fmt(D * 0.0356)}" opacity="${FAINT.outline}" style="stroke:var(--fg);stroke-width:var(--outline-width)"/>`
-      : board(D, 'circle', 'class="fill-none stroke-outline"');
-  const fraction = state === 'locked' ? 0 : arcFraction(slots);
+  const amp = art ? artPath(art.amp, complete ? 'class="fill-bg"' : `class="fill-fg" opacity="${FAINT.amp}"`) : '';
+  let outline = board(D, 'circle', 'class="fill-none stroke-outline"');
+  if (state === 'locked')
+    outline = `<circle cx="${r}" cy="${r}" r="${r}" fill="none" stroke-linecap="round" stroke-dasharray="${fmt(D * 0.0178)} ${fmt(D * 0.0356)}" opacity="${FAINT.outline}" style="stroke:var(--fg);stroke-width:var(--outline-width)"/>`;
+  else if (state === 'open')
+    outline = `<circle cx="${r}" cy="${r}" r="${r}" fill="none" style="stroke:var(--accent);stroke-width:var(--outline-width)"/>`;
+  const fraction = state === 'open' ? arcFraction(slots) : 0;
   // Its outer edge reaches 1px past the circle, over the outline.
   const ring = fraction > 0 ? arc(fraction, RING.outer + 1 / r) : '';
-  const marks = state === 'locked' ? '' : dots(slots);
-
+  const k = LOCK.size / 24;
+  const lock =
+    state === 'locked'
+      ? `<g transform="scale(${fmt(k)}) translate(-12 -12)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--fg)">` +
+        `<path d="${LOCK.shackle}" fill="none"/><path d="${LOCK.body}" class="fill-bg"/></g>`
+      : '';
   const unit = (body) => `<g transform="translate(${r} ${r}) scale(${r})">${body}</g>`;
   return svg(
     D,
     `<defs><clipPath id="${id}"><circle r="1"/></clipPath></defs>` +
       (ribbon ? unit(`<path d="${ribbonPath()}" class="fill-accent"/>`) : '') +
       board(D, 'circle', `class="${complete ? 'fill-fg' : 'fill-bg'}"`) +
-      unit(`<g clip-path="url(#${id})">${inside}</g>`) +
+      unit(`<g clip-path="url(#${id})">${amp}</g>`) +
       outline +
-      unit(ring + marks),
+      unit(ring + lock + (complete ? dots(slots) : '')),
   );
 }

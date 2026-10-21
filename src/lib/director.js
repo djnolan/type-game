@@ -523,9 +523,9 @@ export class Director {
   // `from` is { world, level, letters } on screen. `worlds` lists every world as
   // { world, state: 'complete' | 'open' | 'locked', slots, perfect, label, action, selectable },
   // where `state`, `slots` and `perfect` (hang the ribbon) are for its circle
-  // (worldFace in lib/faces.js),
-  // `label` is the category name and `action` the button text (Begin,
-  // Continue or Replay).
+  // (worldFace in lib/faces.js), `label` is the heading and `action` the button
+  // text: Play, on a pill over an open world's circle, or Replay, as a text
+  // button below a completed one. Locked worlds have neither, nor a heading.
   // `index` is the world on screen. onSelect(i) is called when a world is tapped.
   toMenu({ from, worlds, index, onSelect }) {
     return this.seq.run(async () => {
@@ -548,29 +548,37 @@ export class Director {
       this.hideParts('target', 'canvas', 'caption');
 
       menu.coins = worlds.map((w) => this.coin(g.D).faces(this.menuFace(w, g.D)).set({ y: menuY, s: ms, o: 0 }));
-      // The world's category name sits above the circle, and a pill button below
-      // it enters the world. The button sits low enough to clear the ribbon a
-      // perfect badge will hang below the circle.
+      // The heading sits above the circle. An open world's Play pill sits over
+      // its middle; a completed world's Replay button sits below, low enough to
+      // clear the ribbon a perfect badge hangs below the circle.
       const r = (g.D / 2) * ms;
       menu.label = this.node(div('ml-heading'), g.W, 40);
       menu.label.el.setAttribute('aria-live', 'polite');
       const labelY = menuY - r - 40 * g.k;
-      const button = document.createElement('button');
-      button.className = 'pill ml-continue';
-      button.addEventListener('click', () => {
+      const enter = () => {
         const m = this.menu;
         if (this.mode !== 'menu' || !m) return;
         const i = clamp(Math.round(m.scroll), 0, m.worlds.length - 1);
         if (m.worlds[i].selectable) m.onSelect(i);
-      });
-      menu.button = this.node(button, 200, 52);
-      const ribbonDrop = (RIBBON.bottom - 1) * r;
-      const buttonY = Math.min(menuY + r + ribbonDrop + 48 * g.k, g.H - 26 - 40);
+      };
+      const button = (className, w, h) => {
+        const el = document.createElement('div');
+        const b = document.createElement('button');
+        b.className = className;
+        b.addEventListener('click', enter);
+        el.appendChild(b);
+        return this.node(el, w, h);
+      };
+      menu.play = button('ml-play', 0.89 * r, 0.32 * r);
+      menu.play.el.style.setProperty('--r', `${r}px`);
+      menu.button = button('ml-replay', 200, 52);
+      const buttonY = Math.min(menuY + RIBBON.bottom * r + 48 * g.k, g.H - 26 - 40);
       const nb = T.menuOut.neighbours;
       const off = worlds.map((_, i) => (i < index ? -1 : 1) * nb.distance * g.k);
       this.layoutMenu(off);
       menu.label.set({ x: g.W / 2, y: labelY, o: 0 });
       menu.button.set({ x: g.W / 2, y: buttonY, o: 0 });
+      menu.play.set({ x: g.W / 2, y: menuY, o: 0 });
 
       const mo = T.menuOut;
       const dropTo = g.H + g.D / 2 + 40;
@@ -591,6 +599,7 @@ export class Director {
               menu.coins.forEach((c, i) => i !== index && c.set({ o: e }));
               menu.label.set({ y: labelY + nb.labelRise * g.k * (1 - e), o: e });
               menu.button.set({ y: buttonY + nb.labelRise * g.k * (1 - e), o: e });
+              menu.play.set({ o: e });
             },
             nb.ease,
           ),
@@ -614,10 +623,15 @@ export class Director {
     const i = clamp(Math.round(m.scroll), 0, m.worlds.length - 1);
     const w = m.worlds[i];
     m.label.el.textContent = w.label;
-    // Locked worlds have no button.
-    const btn = m.button.el;
-    btn.textContent = w.action ?? '';
-    btn.style.visibility = w.selectable ? '' : 'hidden';
+    m.label.el.style.visibility = w.state === 'locked' ? 'hidden' : '';
+    // Play rides over the circle, so it fades out while the circles move.
+    const play = m.play.el.firstChild;
+    play.textContent = 'Play';
+    play.style.visibility = w.selectable && w.state !== 'complete' ? '' : 'hidden';
+    play.style.opacity = clamp(1 - Math.abs(m.scroll - i) * 4, 0, 1);
+    const replay = m.button.el.firstChild;
+    replay.textContent = w.action ?? '';
+    replay.style.visibility = w.state === 'complete' ? '' : 'hidden';
   }
 
   snapMenu(to) {
@@ -734,6 +748,7 @@ export class Director {
             m.coins.forEach((c, j) => j !== index && c.set({ dx: (j < index ? -dist : dist) * e, o: 1 - e }));
             m.label.set({ o: 1 - e });
             m.button.set({ o: 1 - e });
+            m.play.set({ o: 1 - e });
           },
           sel.ease,
         ),
@@ -742,7 +757,7 @@ export class Director {
         this.headerIn(rf.duration),
         this.canvasEnter(g2, canvasFace({ ...to, D: g2.D, shape })).then((c) => (canvas = c)),
       ]);
-      this.drop(...m.coins, m.label, m.button);
+      this.drop(...m.coins, m.label, m.button, m.play);
       this.menu = null;
       await this.finishInGame(board, canvas);
     });
