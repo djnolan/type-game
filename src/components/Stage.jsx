@@ -191,7 +191,7 @@ export default function Stage({
     const { ox, oy } = letterOrigin(glyph, letter.x, letter.y, L.canvasBox, grid, sP);
     gesture.current = { ...gesture.current, type: 'letter', from: 'canvas', char, gu: (p.x - ox) / sP, gv: (p.y - oy) / sP };
     onLettersChange(letters.filter((l) => l.char !== char));
-    setGhost({ char, ox, oy, s: sP, out: 0 });
+    setGhost({ char, ox, oy, s: sP, out: 0, fromCanvas: true });
   }
 
   // Where a drop places the letter. Outside it, the letter goes back to the tray.
@@ -227,7 +227,7 @@ export default function Stage({
     // Letters moved within the canvas stay cropped by it. Dragged out to be
     // removed, the cropped part fades in to show it will go back to the tray.
     const out = g.from === 'tray' ? 1 : removalAmount(p);
-    setGhost({ char: g.char, ox: p.x - g.gu * s, oy: p.y - g.gv * s, s, out });
+    setGhost({ char: g.char, ox: p.x - g.gu * s, oy: p.y - g.gv * s, s, out, fromCanvas: g.from === 'canvas' });
   }
 
   function dropLetter(p) {
@@ -460,6 +460,9 @@ export default function Stage({
 
   const building = phase === 'build';
   const checking = !building;
+  // Done is dimmed until a letter is on the board. A letter picked up off the
+  // board still counts, so Done doesn't flicker while it's moved.
+  const doneDimmed = !checking && !letters.length && !ghost?.fromCanvas;
   // Letters fade to the accent while checking, and back after.
   const letterClass = `recolors ${checking ? 'fill-accent' : 'fill-fg'}`;
   const cell = L.D / grid;
@@ -618,7 +621,7 @@ export default function Stage({
           <g
             data-action="done"
             className={`fades ${checking ? 'hidden' : ''}`}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', opacity: doneDimmed ? 0.35 : undefined }}
             role="button"
             aria-label="Done"
           >
